@@ -1,0 +1,21 @@
+{
+    "Reset Password": "Atur Ulang Kata Sandi",
+    "Email Address": "Alamat Email",
+    "Send Password Reset Link": "Kirim Tautan Reset",
+    "Login": "Masuk",
+    "Register": "Daftar",
+    "Logout": "Keluar",
+    "E-Mail Address": "Alamat Email",
+    "Password": "Kata Sandi",
+    "Confirm Password": "Konfirmasi Kata Sandi",
+    "Remember Me": "Ingat Saya",
+    "Forgot Your Password?": "Lupa Kata Sandi Anda?",
+    "Verify Your Email Address": "Verifikasi Alamat Email Anda",
+    "A fresh verification link has been sent to your email address.": "Tautan verifikasi baru telah dikirim ke alamat email Anda.",
+    "Before proceeding, please check your email for a verification link.": "Sebelum melanjutkan, silakan periksa email Anda untuk tautan verifikasi.",
+    "If you did not receive the email": "Jika Anda tidak menerima email",
+    "click here to request another": "klik di sini untuk meminta lagi",
+    "Please confirm your password before continuing.": "Harap konfirmasi kata sandi Anda sebelum melanjutkan.",
+    "Name": "Nama",
+    "Whoops! Something went wrong.": "Ups! Ada yang salah."
+}
