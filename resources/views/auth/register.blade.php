@@ -123,8 +123,8 @@
 <div class="auth-wrap">
     <div class="card auth-card shadow-sm">
         <div class="card-body">
-            <h1 class="auth-title">Buat Akun Baru</h1>
-            <p class="auth-subtitle">Daftar untuk mulai memesan layanan cetak online.</p>
+            <h1 class="auth-title text-center">Buat Akun</h1>
+            <p class="auth-subtitle text-center">Daftar untuk mulai layanan pemesanan percetakan</p>
 
             <form method="POST" action="{{ route('register') }}">
                 @csrf

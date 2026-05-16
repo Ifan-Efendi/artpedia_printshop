@@ -5,7 +5,7 @@
 @section('content')
 <div class="page-header mb-4 d-flex justify-content-between align-items-center">
     <div>
-        <h1 class="fw-bold" style="color: #9d005e;"><i class="bi bi-box-seam me-2"></i>Kelola Produk</h1>
+        <h1 class="fw-bold" style="color: #9d005e;"><i class="bi bi-layers-half me-2"></i>Kelola Produk</h1>
         <p class="text-muted mb-0">Kelola kategori dan produk</p>
     </div>
     <div class="d-flex gap-2">
@@ -25,7 +25,7 @@
                     <div class="d-flex align-items-center justify-content-between w-100 me-2">
                         <div class="d-flex align-items-center gap-2">
                             <div class="kategori-icon-circle-sm">
-                                <i class="bi bi-folder2"></i>
+                                <i class="bi bi-printer"></i>
                             </div>
                             <div>
                                 <div class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $kategori->nama }}</div>
@@ -78,13 +78,23 @@
                                             </td>
                                             <td class="py-2 align-middle">
                                                 <div class="fw-semibold text-dark">{{ $produk->nama }}</div>
+                                                @if($produk->is_finishing || $produk->is_cutting)
+                                                    <div class="d-flex gap-1 mt-1">
+                                                        @if($produk->is_finishing)
+                                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style="font-size: 0.65rem;">Finishing</span>
+                                                        @endif
+                                                        @if($produk->is_cutting)
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25" style="font-size: 0.65rem;">Cutting</span>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="py-2 align-middle fw-bold text-magenta">
                                                 {{ $produk->harga_format }}
                                             </td>
                                             <td class="py-2 align-middle text-center">
                                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 py-1 px-2" style="font-size: 0.75rem;">
-                                                    {{ $produk->min_order }} pcs
+                                                    {{ $produk->min_order }} {{ $produk->unit_label }}
                                                 </span>
                                             </td>
                                             <td class="text-end pe-3 py-2 align-middle">

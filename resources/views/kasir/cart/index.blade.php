@@ -41,6 +41,13 @@
         color: #9d005e;
         font-size: 1.25rem;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .cart-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .cart-meta {
@@ -60,15 +67,10 @@
         font-weight: 700;
     }
 
-    .qty-box {
-        min-width: 44px;
-        height: 34px;
-        border: 1px solid #9ca3af;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    .cart-qty-value {
+        font-size: 1rem;
         font-weight: 600;
-        background: #fff;
+        color: #1f2937;
     }
 
     .btn-remove-circle {
@@ -105,6 +107,31 @@
         gap: 0.75rem;
         flex-wrap: wrap;
     }
+
+    .checkout-meta {
+        font-size: 0.92rem;
+        line-height: 1.5;
+    }
+
+    .checkout-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .checkout-total {
+        font-size: 1.85rem;
+        font-weight: 700;
+        color: #9d005e;
+        line-height: 1.25;
+    }
+
+    .customer-box {
+        border: 1px solid #f1c3dd;
+        border-radius: 10px;
+        padding: 1rem;
+        background: #fdf2f8;
+    }
 </style>
 @endpush
 
@@ -116,9 +143,11 @@
         </div>
     </div>
 
-    <div class="card cart-shell">
-        <div class="card-body p-0">
-            @if(count($cart) > 0)
+    @if(count($cart) > 0)
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card cart-shell">
+                    <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 cart-table">
                         <thead>
@@ -132,20 +161,30 @@
                         </thead>
                         <tbody>
                             @foreach($cart as $item)
+                                @php
+                                    $finishing = $item['finishing'] ?? null;
+                                    $hasFinishing = !empty($finishing) && strtolower(trim($finishing)) !== 'tidak pakai';
+                                    $cutting = $item['opsi_potong'] ?? null;
+                                    $hasCutting = in_array($cutting, ['Kiss Cut', 'Die Cut'], true);
+                                @endphp
                                 <tr>
                                     <td>
                                         <div class="cart-product-wrap">
                                             <div class="cart-thumb">
-                                                <i class="bi bi-file-earmark-text"></i>
+                                                @if(!empty($item['gambar']))
+                                                    <img src="{{ asset('storage/' . $item['gambar']) }}" alt="{{ $item['produk_nama'] }}">
+                                                @else
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                @endif
                                             </div>
                                             <div>
                                                 <strong class="d-block mb-1 cart-product-title">{{ $item['produk_nama'] }}</strong>
-                                                <span class="cart-meta d-block">{{ $item['ukuran_nama'] }} | {{ $item['jenis_nama'] }}</span>
-                                                <span class="cart-meta d-block">Finishing: {{ $item['finishing'] ?? 'Tidak Pakai' }}</span>
-                                                <span class="cart-meta d-block">Potong: {{ $item['opsi_potong'] ?? 'Potong Kotak' }}</span>
-                                                <span class="cart-meta d-block">
-                                                    File desain: {{ !empty($item['foto_produk_nanti']) ? 'Menyusul' : 'Sudah diunggah' }}
-                                                </span>
+                                                @if($hasFinishing)
+                                                    <span class="cart-meta d-block">Finishing: {{ $finishing }}</span>
+                                                @endif
+                                                @if($hasCutting)
+                                                    <span class="cart-meta d-block">Potong: {{ $cutting }}</span>
+                                                @endif
                                                 @if(!empty($item['catatan']))
                                                     <span class="cart-meta d-block">Catatan: {{ $item['catatan'] }}</span>
                                                 @endif
@@ -154,7 +193,7 @@
                                     </td>
                                     <td class="text-center">Rp {{ number_format($item['harga_satuan'], 0, ',', '.') }}</td>
                                     <td class="text-center">
-                                        <span class="qty-box">{{ $item['jumlah'] }}</span>
+                                        <span class="cart-qty-value">{{ $item['jumlah'] }}</span>
                                     </td>
                                     <td class="text-center cart-total">Rp {{ number_format($item['total_harga'], 0, ',', '.') }}</td>
                                     <td class="text-center">
@@ -181,7 +220,7 @@
                 <div class="cart-footer">
                     <div class="d-flex gap-2 flex-wrap">
                         <a href="{{ route('kasir.pesanan.create') }}" class="btn btn-outline-primary px-4">
-                            <i class="bi bi-chevron-left me-1"></i> Tambah Item
+                            <i class="bi bi-chevron-left me-1"></i> Tambah Pesanan
                         </a>
                         <form action="{{ route('kasir.pesanan.item.clear') }}" method="POST" onsubmit="return confirm('Kosongkan semua item keranjang kasir?')">
                             @csrf
@@ -191,11 +230,78 @@
                             </button>
                         </form>
                     </div>
-                    <a href="{{ route('kasir.checkout') }}" class="btn btn-success px-4">
-                        Checkout <i class="bi bi-chevron-right ms-1"></i>
-                    </a>
                 </div>
-            @else
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0 checkout-title">Data Pelanggan</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="checkout-meta text-muted">Total pesanan langsung</div>
+                            <div class="checkout-total">Rp {{ number_format($total, 0, ',', '.') }}</div>
+                        </div>
+
+                        <form action="{{ route('kasir.pesanan.store') }}" method="POST" id="checkoutKasirForm">
+                            @csrf
+                            <div class="customer-box mb-3">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Nama Pelanggan</label>
+                                    <input type="text" name="nama_pelanggan" class="form-control @error('nama_pelanggan') is-invalid @enderror" required placeholder="Nama lengkap pelanggan" value="{{ old('nama_pelanggan') }}">
+                                    @error('nama_pelanggan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Nomor Telepon / WA</label>
+                                    <input type="text" name="telepon_pelanggan" class="form-control @error('telepon_pelanggan') is-invalid @enderror" required placeholder="08xxxxxxxx" value="{{ old('telepon_pelanggan') }}">
+                                    @error('telepon_pelanggan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold">Email <span class="fw-normal text-muted">(Opsional)</span></label>
+                                    <input type="email" name="email_pelanggan" class="form-control @error('email_pelanggan') is-invalid @enderror" placeholder="email@example.com" value="{{ old('email_pelanggan') }}">
+                                    @error('email_pelanggan')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="customer-box mb-3">
+                                <label class="form-label fw-bold d-block mb-2">Metode Pembayaran</label>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="metode_pembayaran" id="metodeCash" value="cash" {{ old('metode_pembayaran', 'cash') === 'cash' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="metodeCash">
+                                        Cash
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="metode_pembayaran" id="metodeMidtrans" value="midtrans" {{ old('metode_pembayaran') === 'midtrans' ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="metodeMidtrans">
+                                        Cashless
+                                    </label>
+                                </div>
+                                @error('metode_pembayaran')
+                                    <div class="text-danger small mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check2-circle me-1"></i> Checkout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @else
                 <div class="empty-state py-5">
                     <i class="bi bi-basket"></i>
                     <h5>Keranjang kasir masih kosong</h5>
@@ -204,7 +310,5 @@
                         <i class="bi bi-plus-circle me-2"></i> Buat Pesanan
                     </a>
                 </div>
-            @endif
-        </div>
-    </div>
+    @endif
 @endsection

@@ -10,9 +10,20 @@ use App\Models\JenisKertas;
 use App\Models\Transaksi;
 use App\Models\Pesanan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Services\MidtransService;
+use App\Services\PricingService;
 
 class CartController extends Controller
 {
+    protected $midtransService;
+    protected $pricingService;
+
+    public function __construct(MidtransService $midtransService, PricingService $pricingService)
+    {
+        $this->midtransService = $midtransService;
+        $this->pricingService = $pricingService;
+    }
     public function index()
     {
         $cart = session()->get('cart', []);
@@ -26,20 +37,10 @@ class CartController extends Controller
 
     public function add(Request $request)
     {
-        // Get first available paper size and type as default
-        $defaultUkuran = UkuranKertas::first()->id ?? null;
-        $defaultJenis = JenisKertas::first()->id ?? null;
-
-        // Merge defaults if not present in request
-        $request->merge([
-            'ukuran_kertas_id' => $request->ukuran_kertas_id ?? $defaultUkuran,
-            'jenis_kertas_id' => $request->jenis_kertas_id ?? $defaultJenis,
-        ]);
-
         $request->validate([
             'produk_id' => 'required|exists:produk,id',
-            'ukuran_kertas_id' => 'required|exists:ukuran_kertas,id',
-            'jenis_kertas_id' => 'required|exists:jenis_kertas,id',
+            'ukuran_kertas_id' => 'nullable|exists:ukuran_kertas,id',
+            'jenis_kertas_id' => 'nullable|exists:jenis_kertas,id',
             'jumlah' => 'required|integer|min:1',
             'file_desain' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'catatan' => 'nullable|string|max:1000',
@@ -48,18 +49,34 @@ class CartController extends Controller
         ]);
 
         $produk = Produk::findOrFail($request->produk_id);
-        $ukuran = UkuranKertas::findOrFail($request->ukuran_kertas_id);
-        $jenis = JenisKertas::findOrFail($request->jenis_kertas_id);
+        $minOrder = max((int) $produk->min_order, 1);
 
-        $finishingInput = $this->normalizeFinishing($request->input('finishing'));
-        $finishingLabel = !empty($finishingInput) ? implode(', ', $finishingInput) : 'Tidak Pakai';
+        if ((int) $request->jumlah < $minOrder) {
+            return redirect()->back()
+                ->withErrors(['jumlah' => 'Minimal order untuk produk ini adalah ' . $minOrder . ' ' . $produk->unit_label . '.'])
+                ->withInput();
+        }
 
-        $hargaSatuan = $this->calculateCustomPrice(
-            $produk->kategori->slug,
+        [$ukuran, $jenis] = $this->pricingService->resolveSpecs(
+            $produk,
+            $request->ukuran_kertas_id,
+            $request->jenis_kertas_id
+        );
+
+        $finishingInput = $produk->is_finishing
+            ? $this->pricingService->normalizeFinishing($request->input('finishing'))
+            : [];
+        $finishingLabel = $this->pricingService->finishingLabel($finishingInput);
+        $opsiPotong = $produk->is_cutting && $request->filled('opsi_potong')
+            ? $request->opsi_potong
+            : null;
+
+        $hargaSatuan = $this->pricingService->calculate(
+            $produk,
             $ukuran->nama,
             $jenis->nama,
             $finishingInput,
-            $request->opsi_potong,
+            $opsiPotong,
             $request->jumlah
         );
         $totalHarga = $hargaSatuan * $request->jumlah;
@@ -74,18 +91,20 @@ class CartController extends Controller
             'id' => $cartId,
             'produk_id' => $produk->id,
             'produk_nama' => $produk->nama,
+            'gambar' => $produk->gambar,
             'ukuran_id' => $ukuran->id,
             'ukuran_nama' => $ukuran->nama,
             'jenis_id' => $jenis->id,
             'jenis_nama' => $jenis->nama,
             'jumlah' => $request->jumlah,
+            'unit_label' => $produk->unit_label,
             'catatan' => $request->catatan,
             'harga_satuan' => $hargaSatuan,
             'total_harga' => $totalHarga,
             'estimasi_waktu' => $estimasiWaktu,
             'file_desain' => $filePath,
             'finishing' => $finishingLabel,
-            'opsi_potong' => $request->opsi_potong ?? 'Potong Kotak',
+            'opsi_potong' => $opsiPotong,
         ];
 
         session()->put('cart', $cart);
@@ -104,23 +123,30 @@ class CartController extends Controller
         return back()->with('success', 'Produk dihapus dari keranjang.');
     }
 
-    public function checkout()
+    public function clear()
     {
         $cart = session()->get('cart', []);
-        if (empty($cart))
-            return redirect()->route('katalog')->with('error', 'Keranjang kosong!');
 
-        $total = 0;
-        foreach ($cart as $item)
-            $total += $item['total_harga'];
+        foreach ($cart as $item) {
+            if (!empty($item['file_desain'])) {
+                Storage::disk('public')->delete($item['file_desain']);
+            }
+        }
 
-        return view('pelanggan.cart.checkout', compact('cart', 'total'));
+        session()->forget('cart');
+
+        return back()->with('success', 'Keranjang berhasil dikosongkan.');
+    }
+
+    public function checkout()
+    {
+        return redirect()->route('pelanggan.cart.index');
     }
 
     public function processCheckout(Request $request)
     {
         $request->validate([
-            'bukti_pembayaran' => 'required|image|max:5120',
+            'bukti_pembayaran' => 'nullable|image|max:5120',
         ]);
 
         $cart = session()->get('cart', []);
@@ -131,110 +157,75 @@ class CartController extends Controller
         foreach ($cart as $item)
             $totalHarga += $item['total_harga'];
 
-        $buktiPath = $request->file('bukti_pembayaran')->store('bukti_bayar', 'public');
+        $buktiPath = $request->hasFile('bukti_pembayaran') 
+            ? $request->file('bukti_pembayaran')->store('bukti_bayar', 'public')
+            : 'Midtrans';
 
-        $transaksi = Transaksi::create([
-            'nomor_transaksi' => Transaksi::generateNomorTransaksi(),
-            'user_id' => auth()->id(),
-            'total_harga' => $totalHarga,
-            'bukti_pembayaran' => $buktiPath,
-            'status' => 'pending',
-        ]);
+        $paymentTokenReady = false;
+        $firstPesananId = null;
 
-        foreach ($cart as $item) {
-            // Move file from temp to final
-            $finalPath = str_replace('desain_temp/', 'desain/', $item['file_desain']);
-            Storage::disk('public')->move($item['file_desain'], $finalPath);
-
-            Pesanan::create([
-                'nomor_pesanan' => Pesanan::generateNomorPesanan(),
+        [$transaksi, $firstPesananId] = DB::transaction(function () use ($totalHarga, $buktiPath, $cart, &$firstPesananId) {
+            $transaksi = Transaksi::create([
+                'nomor_transaksi' => Transaksi::generateNomorTransaksi(),
                 'user_id' => auth()->id(),
-                'transaksi_id' => $transaksi->id,
-                'produk_id' => $item['produk_id'],
-                'ukuran_kertas_id' => $item['ukuran_id'],
-                'jenis_kertas_id' => $item['jenis_id'],
-                'jumlah' => $item['jumlah'],
-                'file_desain' => $finalPath,
-                'catatan' => $item['catatan'],
-                'harga_satuan' => $item['harga_satuan'],
-                'total_harga' => $item['total_harga'],
+                'total_harga' => $totalHarga,
                 'bukti_pembayaran' => $buktiPath,
-                'estimasi_waktu' => $item['estimasi_waktu'],
-                'finishing' => $item['finishing'] ?? 'Tidak Pakai',
-                'opsi_potong' => $item['opsi_potong'] ?? 'Potong Kotak',
                 'status' => 'pending',
+                'pembayaran_status' => 'pending',
             ]);
+
+            $nomorPesananGroup = Pesanan::generateNomorPesanan();
+            $firstPesananId = null;
+
+            foreach ($cart as $item) {
+                $finalPath = str_replace('desain_temp/', 'desain/', $item['file_desain']);
+                if (Storage::disk('public')->exists($item['file_desain'])) {
+                    Storage::disk('public')->move($item['file_desain'], $finalPath);
+                }
+
+                $pesanan = Pesanan::create([
+                    'nomor_pesanan' => $nomorPesananGroup,
+                    'user_id' => auth()->id(),
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $item['produk_id'],
+                    'ukuran_kertas_id' => $item['ukuran_id'],
+                    'jenis_kertas_id' => $item['jenis_id'],
+                    'jumlah' => $item['jumlah'],
+                    'file_desain' => $finalPath,
+                    'catatan' => $item['catatan'],
+                    'harga_satuan' => $item['harga_satuan'],
+                    'total_harga' => $item['total_harga'],
+                    'bukti_pembayaran' => $buktiPath,
+                    'estimasi_waktu' => $item['estimasi_waktu'],
+                    'finishing' => $item['finishing'] ?? 'Tidak Pakai',
+                    'opsi_potong' => !empty($item['opsi_potong']) ? $item['opsi_potong'] : null,
+                    'status' => 'pending',
+                ]);
+                $firstPesananId ??= $pesanan->id;
+            }
+
+            return [$transaksi, $firstPesananId];
+        });
+
+        try {
+            if ($totalHarga <= 0) {
+                throw new \Exception("Total harga harus lebih dari 0 untuk menggunakan Midtrans.");
+            }
+            $snapToken = $this->midtransService->getSnapToken($transaksi);
+            $transaksi->update(['snap_token' => $snapToken]);
+            $paymentTokenReady = true;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal membuat token pembayaran: ' . $e->getMessage());
         }
 
         session()->forget('cart');
 
-        return redirect()->route('home')
-            ->with('success', 'Checkout berhasil! Mohon menunggu validasi kasir.')
-            ->with('feedback_prompt', true);
+        $message = $paymentTokenReady
+            ? 'Checkout berhasil! Silakan klik tombol Bayar Sekarang di bawah ini.'
+            : 'Checkout berhasil dan pesanan sudah tersimpan. Token pembayaran Midtrans belum bisa dibuat.';
+
+        return redirect()->route('pelanggan.pesanan.show', $firstPesananId)
+            ->with('success', $message);
     }
 
-    private function normalizeFinishing($finishing)
-    {
-        if (is_array($finishing)) {
-            return array_values(array_filter($finishing));
-        }
-
-        if (is_string($finishing) && trim($finishing) !== '') {
-            return [trim($finishing)];
-        }
-
-        return [];
-    }
-
-    private function calculateCustomPrice($slug, $ukuran, $bahan, $finishing, $potong, $jumlah = 1)
-    {
-        $price = 0;
-
-        if ($slug === 'poster') {
-            $price = ($ukuran === 'A3' || $ukuran === 'Custom') ? 7000 : 5000;
-        } elseif ($slug === 'sticker') {
-            if (str_contains($bahan, 'Vinyl')) {
-                if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 11000;
-                elseif ($ukuran === 'A4') $price = 8000;
-                elseif ($ukuran === 'A5') $price = 6000;
-                elseif ($ukuran === 'A6') $price = 4000;
-                else $price = 8000;
-            } else {
-                if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 8000;
-                elseif ($ukuran === 'A4') $price = 6000;
-                elseif ($ukuran === 'A5') $price = 4000;
-                elseif ($ukuran === 'A6') $price = 2000;
-                else $price = 6000;
-            }
-            if ($potong === 'Kiss Cut') $price += 4000;
-            elseif ($potong === 'Die Cut') $price += 8000;
-        } elseif ($slug === 'kartu-nama') {
-            $price = 480;
-            if ($finishing && is_array($finishing)) {
-                foreach ($finishing as $f) {
-                    if ($f === 'Glossy' || $f === 'Doff') {
-                        $finishingCost = ceil($jumlah / 25) * 4000;
-                        $price += ($finishingCost / $jumlah);
-                    }
-                }
-            }
-            return $price;
-        } elseif ($slug === 'kartu-ucapan') {
-            $price = 7000;
-        } elseif ($slug === 'brosur') {
-            if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 5000;
-            elseif ($ukuran === 'A4') $price = 4000;
-            elseif ($ukuran === 'A5') $price = 3000;
-            elseif ($ukuran === 'A6') $price = 2000;
-            else $price = 5000;
-        }
-
-        if ($finishing && is_array($finishing)) {
-            foreach ($finishing as $f) {
-                if ($f === 'Glossy' || $f === 'Doff') $price += 4000;
-            }
-        }
-
-        return $price;
-    }
 }

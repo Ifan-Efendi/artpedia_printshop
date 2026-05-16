@@ -45,6 +45,8 @@ class ProdukCmsController extends Controller
             'harga_satuan'            => 'required|numeric|min:0',
             'min_order'               => 'required|integer|min:1',
             'estimasi_waktu_per_unit' => 'nullable|integer|min:1',
+            'is_finishing'            => 'nullable|boolean',
+            'is_cutting'              => 'nullable|boolean',
             'deskripsi'               => 'nullable|string|max:5000',
         ], [
             'nama.required'         => 'Nama produk wajib diisi.',
@@ -81,6 +83,8 @@ class ProdukCmsController extends Controller
             'harga_satuan'            => $request->harga_satuan,
             'min_order'               => $request->min_order,
             'estimasi_waktu_per_unit' => $request->estimasi_waktu_per_unit ?? 5,
+            'is_finishing'            => $request->boolean('is_finishing'),
+            'is_cutting'              => $request->boolean('is_cutting'),
             'aktif'                   => $request->boolean('aktif', true),
         ]);
 
@@ -113,6 +117,8 @@ class ProdukCmsController extends Controller
             'harga_satuan'            => 'required|numeric|min:0',
             'min_order'               => 'required|integer|min:1',
             'estimasi_waktu_per_unit' => 'nullable|integer|min:1',
+            'is_finishing'            => 'nullable|boolean',
+            'is_cutting'              => 'nullable|boolean',
             'deskripsi'               => 'nullable|string|max:5000',
         ], [
             'nama.required'         => 'Nama produk wajib diisi.',
@@ -154,6 +160,8 @@ class ProdukCmsController extends Controller
             'harga_satuan'            => $request->harga_satuan,
             'min_order'               => $request->min_order,
             'estimasi_waktu_per_unit' => $request->estimasi_waktu_per_unit ?? $produk->estimasi_waktu_per_unit,
+            'is_finishing'            => $request->boolean('is_finishing'),
+            'is_cutting'              => $request->boolean('is_cutting'),
             'aktif'                   => $request->boolean('aktif', true),
         ]);
 

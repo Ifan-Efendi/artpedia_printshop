@@ -49,14 +49,8 @@
                                 {{ $produk->kategori->nama }}
                             </span>
 
-                            @if($produk->gambar)
-                                <img src="{{ asset('storage/' . $produk->gambar) }}" class="card-img-top" alt="{{ $produk->nama }}"
-                                    style="height: 180px; object-fit: cover;">
-                            @else
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
-                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
-                                </div>
-                            @endif
+                            <img src="{{ $produk->gambar_url }}" class="card-img-top" alt="{{ $produk->nama }}"
+                                style="height: 180px; object-fit: cover;">
                             <div class="card-body d-flex flex-column p-3">
                                 <h6 class="card-title fw-bold mb-2">{{ $produk->nama }}</h6>
                                 <p class="card-text text-muted flex-grow-1 mb-2" style="font-size: 0.95rem; line-height: 1.45;">{{ Str::limit($produk->deskripsi, 60) }}</p>

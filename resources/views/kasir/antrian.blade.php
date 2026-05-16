@@ -24,7 +24,7 @@
                                 <th>Pelanggan</th>
                                 <th>Produk</th>
                                 <th>Operator</th>
-                                <th>Mulai Sejak</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -38,7 +38,9 @@
                                             <i class="bi bi-person me-1"></i> {{ $proses->operator->name }}
                                         </span>
                                     </td>
-                                    <td>{{ $proses->mulai_produksi_at->diffForHumans() }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">Sedang Dikerjakan</span>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -91,15 +93,9 @@
                                     <td>
                                         <div class="d-flex gap-2">
                                             <a href="{{ route('kasir.pesanan.show', $antri->id) }}"
-                                                class="btn btn-sm btn-outline-primary">
+                                                class="btn btn-sm text-white" style="background: #c00073; border-color: #c00073;">
                                                 <i class="bi bi-eye me-1"></i>Detail
                                             </a>
-                                            <form action="{{ route('kasir.pesanan.batalkan', $antri->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')" style="display: inline;">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-x-circle me-1"></i>Batal
-                                                </button>
-                                            </form>
                                         </div>
                                     </td>
                                 </tr>

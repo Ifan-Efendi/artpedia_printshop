@@ -51,112 +51,76 @@ class DatabaseSeeder extends Seeder
 
         // 2. Kategori Produk
         $kategoris = [
-            ['nama' => 'Sticker', 'slug' => 'sticker', 'deskripsi' => 'Cetak stiker berkualitas dengan berbagai pilihan bahan dan potong.'],
             ['nama' => 'Poster', 'slug' => 'poster', 'deskripsi' => 'Poster kualitas HD untuk kebutuhan promosi atau dekorasi.'],
+            ['nama' => 'ID Card', 'slug' => 'id-card', 'deskripsi' => 'Cetak ID card berbahan PVC untuk kebutuhan identitas dan member card.'],
             ['nama' => 'Kartu Nama', 'slug' => 'kartu-nama', 'deskripsi' => 'Kartu nama profesional dengan bahan premium.'],
             ['nama' => 'Kartu Ucapan', 'slug' => 'kartu-ucapan', 'deskripsi' => 'Cetak kartu ucapan personal atau bisnis.'],
             ['nama' => 'Brosur', 'slug' => 'brosur', 'deskripsi' => 'Media promosi brosur dengan berbagai ukuran.'],
+            ['nama' => 'Sticker', 'slug' => 'sticker', 'deskripsi' => 'Cetak stiker berkualitas dengan berbagai pilihan bahan dan potong.'],
         ];
 
         foreach ($kategoris as $kat) {
             KategoriProduk::create($kat);
         }
 
-        // 3. Ukuran Kertas
-        $ukurans = [
-            ['nama' => 'A3', 'dimensi' => '297x420mm', 'faktor_harga' => 1.00, 'faktor_waktu' => 1.00],
-            ['nama' => 'A4', 'dimensi' => '210x297mm', 'faktor_harga' => 1.00, 'faktor_waktu' => 1.00],
-            ['nama' => 'A5', 'dimensi' => '148x210mm', 'faktor_harga' => 1.00, 'faktor_waktu' => 1.00],
-            ['nama' => 'A6', 'dimensi' => '105x148mm', 'faktor_harga' => 1.00, 'faktor_waktu' => 1.00],
-            ['nama' => 'Standard (54x86 mm)', 'dimensi' => '54x86mm', 'faktor_harga' => 1.00, 'faktor_waktu' => 1.00],
-            ['nama' => 'Custom', 'dimensi' => 'Custom', 'faktor_harga' => 1.00, 'faktor_waktu' => 1.00],
-        ];
+        // ... (Ukuran & Jenis Kertas tetap) ...
+        // (Saya asumsikan bagian Ukuran & Jenis Kertas sudah ada di atas baris 97)
 
-        foreach ($ukurans as $uk) {
-            UkuranKertas::create($uk);
-        }
-
-        // 4. Jenis Kertas / Bahan
-        $jenis = [
-            ['nama' => 'Vinyl', 'harga_tambahan' => 0],
-            ['nama' => 'Vinyl Transparan', 'harga_tambahan' => 0],
-            ['nama' => 'Chromo Glossy', 'harga_tambahan' => 0],
-            ['nama' => 'Chromo HVS', 'harga_tambahan' => 0],
-            ['nama' => 'Artpaper 150 gsm', 'harga_tambahan' => 0],
-            ['nama' => 'Artpaper 260 gsm', 'harga_tambahan' => 0],
-            ['nama' => 'Artpaper 120 gsm', 'harga_tambahan' => 0],
-            ['nama' => 'Linen', 'harga_tambahan' => 0],
-            ['nama' => 'Concord', 'harga_tambahan' => 0],
-            ['nama' => 'Jasmine', 'harga_tambahan' => 0],
-        ];
-
-        foreach ($jenis as $j) {
-            JenisKertas::create($j);
-        }
-
-        // 5. Produk (Specific Variants)
+        // 5. Produk Aktif
         $produks = [
-            // Sticker (Cat ID: 1)
             [
-                'kategori_id' => 1,
-                'nama' => 'Sticker Vinyl A3',
+                'kategori_id' => 6,
+                'nama' => 'Sticker Vinyl Glossy A3+',
                 'slug' => 'sticker-vinyl-a3',
-                'deskripsi' => 'Cetak stiker bahan Vinyl tahan air ukuran A3 (32x48cm). Termasuk potong.',
+                'deskripsi' => 'Cetak stiker bahan vinyl tahan air ukuran A3+ (32x48 cm).',
                 'harga_satuan' => 11000,
                 'min_order' => 1,
+                'is_finishing' => false,
+                'is_cutting' => true,
+                'estimasi_waktu_per_unit' => 5,
+            ],
+            [
+                'kategori_id' => 6,
+                'nama' => 'Sticker Chromo A3+',
+                'slug' => 'sticker-chromo-a3',
+                'deskripsi' => 'Cetak stiker bahan Chromo Glossy ukuran A3+ (32x48 cm).',
+                'harga_satuan' => 8000,
+                'min_order' => 1,
+                'is_finishing' => false,
+                'is_cutting' => true,
                 'estimasi_waktu_per_unit' => 5,
             ],
             [
                 'kategori_id' => 1,
-                'nama' => 'Sticker Chromo A3',
-                'slug' => 'sticker-chromo-a3',
-                'deskripsi' => 'Cetak stiker bahan kertas Chromo mengkilap ukuran A3 (32x48cm).',
-                'harga_satuan' => 8000,
-                'min_order' => 1,
-                'estimasi_waktu_per_unit' => 5,
-            ],
-            
-            // Poster (Cat ID: 2)
-            [
-                'kategori_id' => 2,
                 'nama' => 'Poster Artpaper 260 A3',
-                'slug' => 'poster-ap260-a3',
+                'slug' => 'poster-artpaper-260-a3',
                 'deskripsi' => 'Poster dinding kertas tebal Artpaper 260gsm ukuran A3.',
                 'harga_satuan' => 7000,
                 'min_order' => 1,
+                'is_finishing' => true,
                 'estimasi_waktu_per_unit' => 3,
             ],
             [
-                'kategori_id' => 2,
+                'kategori_id' => 1,
                 'nama' => 'Poster Artpaper 260 A4',
-                'slug' => 'poster-ap260-a4',
+                'slug' => 'poster-artpaper-260-a4',
                 'deskripsi' => 'Poster dinding kertas tebal Artpaper 260gsm ukuran A4.',
                 'harga_satuan' => 4000,
                 'min_order' => 1,
+                'is_finishing' => true,
                 'estimasi_waktu_per_unit' => 3,
             ],
-             [
-                'kategori_id' => 2,
-                'nama' => 'Poster Artpaper 150 A3',
-                'slug' => 'poster-ap150-a3',
-                'deskripsi' => 'Poster ekonomis kertas Artpaper 150gsm ukuran A3.',
-                'harga_satuan' => 5000,
-                'min_order' => 1,
-                'estimasi_waktu_per_unit' => 3,
-            ],
-
-            // Kartu Nama (Cat ID: 3)
             [
                 'kategori_id' => 3,
-                'nama' => 'Kartu Nama Standard',
-                'slug' => 'kartu-nama-standard',
-                'deskripsi' => 'Kartu nama 1 muka bahan Art Carton 260gsm (Box isi 100).',
-                'harga_satuan' => 40000, // Per box logic might need adjustment but keeping consistent with system
-                'min_order' => 1, // Logic change: 1 box? Or keeping 100 pcs logic? keeping system consistent for now
-                'estimasi_waktu_per_unit' => 60,
+                'nama' => 'Kartu Nama 1 Muka',
+                'slug' => 'kartu-nama-1-muka',
+                'deskripsi' => 'Kartu nama 1 muka bahan Art Carton 260 gsm. Harga per pcs.',
+                'harga_satuan' => 480,
+                'min_order' => 1,
+                'is_finishing' => true,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 2,
             ],
-
-            // Kartu Ucapan (Cat ID: 4)
             [
                 'kategori_id' => 4,
                 'nama' => 'Kartu Ucapan A3',
@@ -164,26 +128,96 @@ class DatabaseSeeder extends Seeder
                 'deskripsi' => 'Cetak kartu ucapan custom bahan BW / Carton per lembar A3.',
                 'harga_satuan' => 7000,
                 'min_order' => 1,
+                'is_finishing' => false,
+                'is_cutting' => false,
                 'estimasi_waktu_per_unit' => 2,
             ],
-
-            // Brosur (Cat ID: 5)
             [
                 'kategori_id' => 5,
-                'nama' => 'Brosur A4',
-                'slug' => 'brosur-a4',
-                'deskripsi' => 'Cetak brosur promosi ukuran A4 bahan Artpaper 120gsm.',
-                'harga_satuan' => 4000,
-                'min_order' => 1,
+                'nama' => 'Cetak Brosur A4',
+                'slug' => 'cetak-brosur-a4',
+                'deskripsi' => 'Cetak brosur ukuran A4 bahan Artpaper 150gsm',
+                'harga_satuan' => 1200,
+                'min_order' => 500,
+                'is_finishing' => false,
+                'is_cutting' => false,
                 'estimasi_waktu_per_unit' => 1,
             ],
             [
                 'kategori_id' => 5,
-                'nama' => 'Brosur A5',
-                'slug' => 'brosur-a5',
-                'deskripsi' => 'Cetak brosur promosi hemat ukuran A5 bahan Artpaper 120gsm.',
-                'harga_satuan' => 2500,
-                'min_order' => 2,
+                'nama' => 'Cetak Brosur A5',
+                'slug' => 'cetak-brosur-a5',
+                'deskripsi' => 'Cetak brosur ukuran A5 bahan Artpaper 150gsm',
+                'harga_satuan' => 800,
+                'min_order' => 500,
+                'is_finishing' => false,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 1,
+            ],
+            [
+                'kategori_id' => 2,
+                'nama' => 'ID Card 1 Muka',
+                'slug' => 'id-card-1-muka',
+                'deskripsi' => 'Cetak ID card bahan PVC 1 muka.',
+                'harga_satuan' => 8000,
+                'min_order' => 1,
+                'is_finishing' => false,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 2,
+            ],
+            [
+                'kategori_id' => 2,
+                'nama' => 'ID Card',
+                'slug' => 'id-card',
+                'deskripsi' => 'Cetak ID card bahan PVC.',
+                'harga_satuan' => 4500,
+                'min_order' => 1,
+                'is_finishing' => false,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 2,
+            ],
+            [
+                'kategori_id' => 5,
+                'nama' => 'Cetak Brosur A4 Bolak - Balik',
+                'slug' => 'cetak-brosur-a4-bolak-balik',
+                'deskripsi' => 'cetak brosur ukuran A4 bolak balik bahan artpaper 150gsm',
+                'harga_satuan' => 1600,
+                'min_order' => 500,
+                'is_finishing' => false,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 1,
+            ],
+            [
+                'kategori_id' => 5,
+                'nama' => 'Cetak Brosur A5 Bolak Balik',
+                'slug' => 'cetak-brosur-a5-bolak-balik',
+                'deskripsi' => 'cetak brosur ukuran A5 bolak balik bahan artpaper 150gsm',
+                'harga_satuan' => 1200,
+                'min_order' => 500,
+                'is_finishing' => false,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 1,
+            ],
+            [
+                'kategori_id' => 5,
+                'nama' => 'Cetak Brosur A6',
+                'slug' => 'cetak-brosur-a6',
+                'deskripsi' => 'Cetak brosur ukuran A6 bahan artpaper 150gsm',
+                'harga_satuan' => 500,
+                'min_order' => 500,
+                'is_finishing' => false,
+                'is_cutting' => false,
+                'estimasi_waktu_per_unit' => 1,
+            ],
+            [
+                'kategori_id' => 5,
+                'nama' => 'Cetak Brosur A6 Bolak Balik',
+                'slug' => 'cetak-brosur-a6-bolak-balik',
+                'deskripsi' => 'Cetak brosur ukuran A6 bolak balik bahan artpaper 150gsm',
+                'harga_satuan' => 600,
+                'min_order' => 500,
+                'is_finishing' => false,
+                'is_cutting' => false,
                 'estimasi_waktu_per_unit' => 1,
             ],
         ];

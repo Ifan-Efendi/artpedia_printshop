@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout Kasir')
+@section('title', 'Checkout Pesanan')
 
 @push('styles')
 <style>
@@ -34,8 +34,8 @@
 @section('content')
     <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-            <h1><i class="bi bi-cash-coin me-2"></i>Checkout Kasir</h1>
-            <p>Lengkapi data pelanggan untuk memproses pesanan langsung.</p>
+            <h1><i class="bi bi-credit-card me-2"></i>Checkout Pesanan</h1>
+            <p>Lengkapi data pelanggan dan pilih metode pembayaran untuk memproses semua item di keranjang.</p>
         </div>
         <a href="{{ route('kasir.cart.index') }}" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left me-2"></i> Kembali ke Keranjang
@@ -61,15 +61,27 @@
                             </thead>
                             <tbody>
                                 @foreach($cart as $item)
+                                    @php
+                                        $finishing = $item['finishing'] ?? null;
+                                        $hasFinishing = !empty($finishing) && strtolower(trim($finishing)) !== 'tidak pakai';
+                                        $cutting = $item['opsi_potong'] ?? null;
+                                        $hasCutting = in_array($cutting, ['Kiss Cut', 'Die Cut'], true);
+                                        $hasSpecs = $hasFinishing || $hasCutting;
+                                    @endphp
                                     <tr>
                                         <td>{{ $item['produk_nama'] }}</td>
                                         <td>
-                                            <span class="checkout-meta text-muted d-block">{{ $item['ukuran_nama'] }} | {{ $item['jenis_nama'] }}</span>
-                                            <span class="checkout-meta text-muted d-block">Finishing: {{ $item['finishing'] ?? 'Tidak Pakai' }}</span>
-                                            <span class="checkout-meta text-muted d-block">Potong: {{ $item['opsi_potong'] ?? 'Potong Kotak' }}</span>
-                                            <span class="checkout-meta text-muted d-block">File desain: {{ !empty($item['foto_produk_nanti']) ? 'Menyusul' : 'Sudah diunggah' }}</span>
+                                            @if($hasFinishing)
+                                                <span class="checkout-meta text-muted d-block">Finishing: {{ $finishing }}</span>
+                                            @endif
+                                            @if($hasCutting)
+                                                <span class="checkout-meta text-muted d-block">Potong: {{ $cutting }}</span>
+                                            @endif
+                                            @unless($hasSpecs)
+                                                <span class="checkout-meta text-muted d-block">-</span>
+                                            @endunless
                                         </td>
-                                        <td>{{ $item['jumlah'] }}</td>
+                                        <td>{{ $item['jumlah'] }} {{ $item['unit_label'] ?? 'lembar' }}</td>
                                         <td class="fw-bold">Rp {{ number_format($item['total_harga'], 0, ',', '.') }}</td>
                                     </tr>
                                 @endforeach
@@ -119,8 +131,27 @@
                             </div>
                         </div>
 
+                        <div class="customer-box mb-3">
+                            <label class="form-label fw-bold d-block mb-2">Metode Pembayaran</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="metode_pembayaran" id="metodeCash" value="cash" {{ old('metode_pembayaran', 'cash') === 'cash' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="metodeCash">
+                                    Cash
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metode_pembayaran" id="metodeMidtrans" value="midtrans" {{ old('metode_pembayaran') === 'midtrans' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="metodeMidtrans">
+                                    Cashless
+                                </label>
+                            </div>
+                            @error('metode_pembayaran')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                         <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-check2-circle me-1"></i> Simpan & Proses Antrian
+                            <i class="bi bi-check2-circle me-1"></i> Checkout
                         </button>
                     </form>
                 </div>

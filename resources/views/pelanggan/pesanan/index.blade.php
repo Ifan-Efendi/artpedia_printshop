@@ -65,7 +65,7 @@
                                             {{ $pesanan->ukuranKertas->nama ?? '' }} | {{ $pesanan->jenisKertas->nama ?? '' }}
                                         </div>
                                     </td>
-                                    <td>{{ $pesanan->jumlah }} lembar</td>
+                                    <td>{{ $pesanan->jumlah }} {{ $pesanan->produk->unit_label ?? 'lembar' }}</td>
                                     <td><span class="pesanan-primary">{{ $pesanan->total_harga_format }}</span></td>
                                     <td>
                                         <span class="badge badge-{{ $pesanan->status }}">
@@ -103,9 +103,6 @@
                     <i class="bi bi-inbox"></i>
                     <h5>Belum ada pesanan</h5>
                     <p class="text-muted">Mulai dengan membuat pesanan pertama Anda!</p>
-                    <a href="{{ route('pelanggan.pesanan.create') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-2"></i> Buat Pesanan
-                    </a>
                 </div>
             @endif
         </div>

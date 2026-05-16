@@ -15,6 +15,8 @@ class Transaksi extends Model
         'total_harga',
         'bukti_pembayaran',
         'status',
+        'snap_token',
+        'pembayaran_status',
         'alasan_penolakan',
         'dikonfirmasi_oleh',
         'dikonfirmasi_at',

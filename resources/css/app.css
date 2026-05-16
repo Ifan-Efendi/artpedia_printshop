@@ -1,0 +1,28 @@
+/* Feature cards styling */
+.feature-card {
+    border: none;
+    padding: 3rem 2.25rem;
+}
+
+.feature-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    padding: 6px;
+}
+
+.feature-icon .feature-icon-inner,
+.feature-icon-inner {
+    font-size: 1.45rem;
+}
+
+/* Add vertical spacing for the whole section when needed */
+section.container.py-5 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}

@@ -28,10 +28,10 @@
                         <td>
                             <div class="d-flex gap-1">
                                 <a href="{{ route('kasir.pesanan.show', $pesanan->id) }}"
-                                    class="btn btn-sm btn-outline-primary">
+                                    class="btn btn-sm text-white" style="background: #c00073; border-color: #c00073;">
                                     <i class="bi bi-eye"></i> Detail
                                 </a>
-                                @if(in_array($pesanan->status, ['pending', 'dalam_antrian']))
+                                @if($pesanan->status === 'pending' && $pesanan->pembayaran_status === 'pending')
                                     <form action="{{ route('kasir.pesanan.batalkan', $pesanan->id) }}" method="POST" style="display: inline;">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-danger batalkan-pesanan" data-nomor="{{ $pesanan->nomor_pesanan }}">

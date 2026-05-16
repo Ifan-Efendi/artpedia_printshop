@@ -11,28 +11,42 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\MidtransService;
+use App\Services\PricingService;
 
 class KasirController extends Controller
 {
     private string $walkInCartKey = 'kasir_walkin_cart';
+    protected MidtransService $midtransService;
+    protected PricingService $pricingService;
+
+    public function __construct(MidtransService $midtransService, PricingService $pricingService)
+    {
+        $this->midtransService = $midtransService;
+        $this->pricingService = $pricingService;
+    }
 
     /**
      * Display kasir dashboard
      */
     public function dashboard()
     {
-        $pendingCount = Pesanan::pending()->count();
-        $todayValidated = Pesanan::whereIn('status', ['dalam_antrian', 'diproses', 'selesai'])->count();
-        $totalValidated = Pesanan::where('status', 'dibatalkan')->count();
+        $pesananMasukCount = Pesanan::where('status', 'pending')
+            ->where('pembayaran_status', 'pending')
+            ->count();
+        $pesananAntrianCount = Pesanan::where('status', 'dalam_antrian')->count();
+        $pesananSelesaiCount = Pesanan::where('status', 'selesai')->count();
 
-        $recentPesanan = Pesanan::pending()
+        $recentPesanan = Pesanan::where('status', 'pending')
+            ->where('pembayaran_status', 'pending')
             ->with(['user', 'produk'])
             ->latest()
             ->take(5)
             ->get();
 
-        return view('kasir.dashboard', compact('pendingCount', 'todayValidated', 'totalValidated', 'recentPesanan'));
+        return view('kasir.dashboard', compact('pesananMasukCount', 'pesananAntrianCount', 'pesananSelesaiCount', 'recentPesanan'));
     }
 
     /**
@@ -59,7 +73,8 @@ class KasirController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
-            $query->pending();
+            $query->where('status', 'pending')
+                ->where('pembayaran_status', 'pending');
         }
 
         if ($request->filled('search')) {
@@ -74,10 +89,61 @@ class KasirController extends Controller
      */
     public function show($id)
     {
-        $pesanan = Pesanan::with(['user', 'produk', 'ukuranKertas', 'jenisKertas'])
+        $pesanan = Pesanan::with(['user', 'produk', 'ukuranKertas', 'jenisKertas', 'transaksi'])
             ->findOrFail($id);
 
-        return view('kasir.pesanan.show', compact('pesanan'));
+        $paymentModel = $pesanan->transaksi ?: $pesanan;
+
+        if (($paymentModel->pembayaran_status ?? null) === 'pending') {
+            try {
+                $snapToken = $this->midtransService->getSnapToken($paymentModel);
+                $paymentModel->update(['snap_token' => $snapToken]);
+                $paymentModel->setAttribute('snap_token', $snapToken);
+            } catch (\Exception $e) {
+                session()->flash('error', 'Pesanan tersimpan, tetapi kode pembayaran belum bisa diperbarui: ' . $e->getMessage());
+            }
+        }
+
+        $pesananItems = Pesanan::where('nomor_pesanan', $pesanan->nomor_pesanan)
+            ->with(['produk.kategori', 'ukuranKertas', 'jenisKertas'])
+            ->orderBy('id')
+            ->get();
+
+        $groupTotal = (int) ($pesanan->transaksi->total_harga ?? $pesananItems->sum('total_harga'));
+
+        return view('kasir.pesanan.show', compact('pesanan', 'pesananItems', 'groupTotal'));
+    }
+
+    public function paymentStatus($id)
+    {
+        $pesanan = Pesanan::with('transaksi')->findOrFail($id);
+
+        $orderId = $this->resolveOrderId(request()->query('order_id'));
+        if ($orderId) {
+            try {
+                $this->midtransService->syncTransactionStatus($orderId);
+                $pesanan->refresh();
+                $pesanan->load('transaksi');
+            } catch (\Exception $e) {
+                // Keep current local status if Midtrans status check fails.
+            }
+        }
+
+        $paymentStatus = $pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status;
+
+        return response()->json([
+            'payment_status' => $paymentStatus,
+            'status' => $pesanan->status,
+            'is_paid' => $paymentStatus === 'paid',
+            'redirect_url' => $paymentStatus === 'paid'
+                ? route('kasir.pesanan.show', ['id' => $pesanan->id, 'show_feedback' => 1])
+                : route('kasir.pesanan.show', $pesanan->id),
+        ]);
+    }
+
+    private function resolveOrderId(?string $orderId): ?string
+    {
+        return is_string($orderId) && trim($orderId) !== '' ? trim($orderId) : null;
     }
 
     /**
@@ -88,11 +154,11 @@ class KasirController extends Controller
         $pesanan = Pesanan::findOrFail($id);
         $path = $pesanan->file_desain;
 
-        if ($path === 'NANTI_DIKIRIM') {
-            return redirect()->back()->with('error', 'Foto produk belum diunggah. Pelanggan akan mengirim menyusul.');
+        if (!$path || $path === 'NANTI_DIKIRIM') {
+            return redirect()->back()->with('error', 'File desain tidak tersedia untuk pesanan ini.');
         }
 
-        if (!$path || !Storage::disk('public')->exists($path)) {
+        if (!Storage::disk('public')->exists($path)) {
             return redirect()->back()->with('error', 'File desain tidak ditemukan.');
         }
 
@@ -111,7 +177,7 @@ class KasirController extends Controller
         $pesanan = Pesanan::findOrFail($id);
         $path = $pesanan->bukti_pembayaran;
 
-        if (!$path || $path === 'Pesanan Langsung') {
+        if (!$path || in_array($path, ['Pesanan Langsung', 'Midtrans Kasir'])) {
             return redirect()->back()->with('error', 'Pesanan ini tidak memiliki bukti transfer.');
         }
 
@@ -168,15 +234,19 @@ class KasirController extends Controller
 
     public function batalkan(Request $request, $id)
     {
-        $pesanan = Pesanan::findOrFail($id);
-        if (!in_array($pesanan->status, ['pending', 'dalam_antrian'])) {
-            return redirect()->back()->with('error', 'Hanya pesanan pending atau dalam antrian yang dapat dibatalkan.');
+        $pesanan = Pesanan::with('transaksi')->findOrFail($id);
+        $paymentStatus = $pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status;
+
+        if (!in_array($pesanan->status, ['pending', 'dalam_antrian']) || $paymentStatus === 'paid') {
+            return redirect()->back()->with('error', 'Hanya pesanan yang belum dibayar yang dapat dibatalkan.');
         }
+
         $pesanan->update([
             'status' => 'dibatalkan',
             'dikonfirmasi_oleh' => auth()->id(),
             'dikonfirmasi_at' => now(),
         ]);
+
         return redirect()->back()->with('success', 'Pesanan ' . $pesanan->nomor_pesanan . ' telah dibatalkan.');
     }
 
@@ -206,6 +276,10 @@ class KasirController extends Controller
                 'slug' => $produk->slug,
                 'harga_satuan' => $produk->harga_satuan,
                 'kategori_id' => $produk->kategori_id,
+                'min_order' => $produk->min_order,
+                'is_finishing' => (bool) $produk->is_finishing,
+                'is_cutting' => (bool) $produk->is_cutting,
+                'unit_label' => $produk->unit_label,
             ];
         })->values();
         $kategoris = KategoriProduk::aktif()->orderBy('nama')->get();
@@ -225,14 +299,7 @@ class KasirController extends Controller
 
     public function checkout()
     {
-        $cart = session()->get($this->walkInCartKey, []);
-        if (empty($cart)) {
-            return redirect()->route('kasir.pesanan.create')->with('error', 'Keranjang pesanan langsung masih kosong.');
-        }
-
-        $total = collect($cart)->sum('total_harga');
-
-        return view('kasir.cart.checkout', compact('cart', 'total'));
+        return redirect()->route('kasir.cart.index');
     }
 
     /**
@@ -243,40 +310,47 @@ class KasirController extends Controller
         $request->validate([
             'produk_id' => 'required|exists:produk,id',
             'jumlah' => 'required|integer|min:1',
-            'file_desain' => 'required_without:foto_produk_nanti|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'foto_produk_nanti' => 'nullable|boolean',
+            'file_desain' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'catatan' => 'nullable|string|max:1000',
             'finishing' => 'nullable',
             'opsi_potong' => 'nullable|string',
         ]);
 
         $produk = Produk::findOrFail($request->produk_id);
-        
-        // Use provided IDs or default to the first ones if missing (since they are not in the form)
-        $ukuranId = $request->input('ukuran_kertas_id') ?? UkuranKertas::first()->id;
-        $jenisId = $request->input('jenis_kertas_id') ?? JenisKertas::first()->id;
+        $minOrder = max((int) $produk->min_order, 1);
 
-        $ukuran = UkuranKertas::findOrFail($ukuranId);
-        $jenis = JenisKertas::findOrFail($jenisId);
+        if ((int) $request->jumlah < $minOrder) {
+            return redirect()->back()
+                ->withErrors(['jumlah' => 'Minimal order untuk produk ini adalah ' . $minOrder . ' ' . $produk->unit_label . '.'])
+                ->withInput();
+        }
 
-        $finishingInput = $this->normalizeFinishing($request->input('finishing'));
-        $finishing = !empty($finishingInput) ? implode(', ', $finishingInput) : 'Tidak Pakai';
+        [$ukuran, $jenis] = $this->pricingService->resolveSpecs(
+            $produk,
+            $request->ukuran_kertas_id,
+            $request->jenis_kertas_id
+        );
 
-        $hargaSatuan = $this->calculateCustomPrice(
-            $produk->kategori->slug,
+        $finishingInput = $produk->is_finishing
+            ? $this->pricingService->normalizeFinishing($request->input('finishing'))
+            : [];
+        $finishing = $this->pricingService->finishingLabel($finishingInput);
+        $opsiPotong = $produk->is_cutting && $request->filled('opsi_potong')
+            ? $request->opsi_potong
+            : null;
+
+        $hargaSatuan = $this->pricingService->calculate(
+            $produk,
             $ukuran->nama,
             $jenis->nama,
             $finishingInput,
-            $request->opsi_potong,
+            $opsiPotong,
             $request->jumlah
         );
 
         $totalHarga = $hargaSatuan * $request->jumlah;
         $estimasiWaktu = ceil($produk->estimasi_waktu_per_unit * $request->jumlah);
-        $fotoProdukNanti = $request->boolean('foto_produk_nanti');
-        $fileDesainTemp = $request->hasFile('file_desain')
-            ? $request->file('file_desain')->store('desain_temp_walkin', 'public')
-            : null;
+        $fileDesainTemp = $request->file('file_desain')->store('desain_temp_walkin', 'public');
         $itemId = uniqid('wlk_', true);
 
         $walkInCart = session()->get($this->walkInCartKey, []);
@@ -284,19 +358,20 @@ class KasirController extends Controller
             'id' => $itemId,
             'produk_id' => $produk->id,
             'produk_nama' => $produk->nama,
+            'gambar' => $produk->gambar,
             'ukuran_kertas_id' => $ukuran->id,
             'ukuran_nama' => $ukuran->nama,
             'jenis_kertas_id' => $jenis->id,
             'jenis_nama' => $jenis->nama,
             'jumlah' => $request->jumlah,
+            'unit_label' => $produk->unit_label,
             'file_desain_temp' => $fileDesainTemp,
-            'foto_produk_nanti' => $fotoProdukNanti,
             'catatan' => $request->catatan,
             'harga_satuan' => $hargaSatuan,
             'total_harga' => $totalHarga,
             'estimasi_waktu' => $estimasiWaktu,
             'finishing' => $finishing,
-            'opsi_potong' => $request->opsi_potong ?? 'Potong Kotak',
+            'opsi_potong' => $opsiPotong,
         ];
 
         session()->put($this->walkInCartKey, $walkInCart);
@@ -339,6 +414,54 @@ class KasirController extends Controller
         return back()->with('success', 'Daftar item walk-in berhasil dikosongkan.');
     }
 
+    public function hitungHarga(Request $request)
+    {
+        $produk = Produk::with('kategori')->find($request->produk_id);
+
+        [$ukuran, $jenis] = $produk
+            ? $this->pricingService->resolveSpecs($produk, $request->ukuran_kertas_id, $request->jenis_kertas_id)
+            : [null, null];
+
+        if (!$produk || !$ukuran || !$jenis) {
+            return response()->json(['error' => 'Data tidak lengkap'], 422);
+        }
+
+        $jumlah = max((int) $request->input('jumlah', 1), 1);
+        $minOrder = max((int) $produk->min_order, 1);
+
+        if ($jumlah < $minOrder) {
+            return response()->json([
+                'error' => 'Minimal order untuk produk ini adalah ' . $minOrder . ' ' . $produk->unit_label . '.',
+            ], 422);
+        }
+
+        $finishingInput = $produk->is_finishing
+            ? $this->pricingService->normalizeFinishing($request->input('finishing'))
+            : [];
+        $opsiPotong = $produk->is_cutting && $request->filled('opsi_potong')
+            ? $request->opsi_potong
+            : null;
+
+        $hargaSatuan = $this->pricingService->calculate(
+            $produk,
+            $ukuran->nama,
+            $jenis->nama,
+            $finishingInput,
+            $opsiPotong,
+            $jumlah
+        );
+        $totalHarga = $hargaSatuan * $jumlah;
+        $estimasiWaktu = ceil($produk->estimasi_waktu_per_unit * $jumlah);
+
+        return response()->json([
+            'harga_satuan' => $hargaSatuan,
+            'harga_satuan_format' => 'Rp ' . number_format($hargaSatuan, 0, ',', '.'),
+            'total_harga' => $totalHarga,
+            'total_harga_format' => 'Rp ' . number_format($totalHarga, 0, ',', '.'),
+            'estimasi_waktu' => $estimasiWaktu,
+        ]);
+    }
+
     /**
      * Store walk-in order
      */
@@ -348,11 +471,19 @@ class KasirController extends Controller
             'nama_pelanggan' => 'required|string|max:255',
             'email_pelanggan' => 'nullable|email',
             'telepon_pelanggan' => 'required|string|max:15',
+            'metode_pembayaran' => 'required|in:cash,midtrans',
         ]);
 
         $walkInCart = session()->get($this->walkInCartKey, []);
         if (empty($walkInCart)) {
             return redirect()->route('kasir.pesanan.create')->with('error', 'Keranjang pesanan langsung masih kosong.');
+        }
+
+        foreach ($walkInCart as $item) {
+            if (empty($item['file_desain_temp'])) {
+                return redirect()->route('kasir.pesanan.create')
+                    ->with('error', 'Setiap pesanan kasir wajib menyertakan file desain sebelum dilanjutkan.');
+            }
         }
 
         // Find or create customer
@@ -366,7 +497,7 @@ class KasirController extends Controller
         }
 
         if (!$user) {
-            $email = $request->email_pelanggan ?: $request->telepon_pelanggan . '@artpedia.com';
+            $email = $request->email_pelanggan ?: ('walkin+' . preg_replace('/\D+/', '', (string) $request->telepon_pelanggan) . '@artpedia.local');
             if (User::where('email', $email)->exists()) {
                 $user = User::where('email', $email)->first();
             } else {
@@ -380,110 +511,72 @@ class KasirController extends Controller
             }
         }
 
-        foreach ($walkInCart as $item) {
-            if (!empty($item['file_desain_temp'])) {
+        $totalHarga = collect($walkInCart)->sum('total_harga');
+        $isCash = $request->metode_pembayaran === 'cash';
+
+        [$transaksi, $firstPesananId] = DB::transaction(function () use ($user, $totalHarga, $isCash, $walkInCart) {
+            $transaksi = \App\Models\Transaksi::create([
+                'nomor_transaksi' => \App\Models\Transaksi::generateNomorTransaksi(),
+                'user_id' => $user->id,
+                'total_harga' => $totalHarga,
+                'bukti_pembayaran' => $isCash ? 'Pesanan Langsung' : 'Midtrans Kasir',
+                'status' => $isCash ? 'valid' : 'pending',
+                'pembayaran_status' => $isCash ? 'paid' : 'pending',
+            ]);
+
+            $firstPesananId = null;
+            $nomorPesananGroup = Pesanan::generateNomorPesanan();
+
+            foreach ($walkInCart as $item) {
                 $finalPath = str_replace('desain_temp_walkin/', 'desain/', $item['file_desain_temp']);
                 Storage::disk('public')->move($item['file_desain_temp'], $finalPath);
-            } else {
-                $finalPath = 'NANTI_DIKIRIM';
+
+                $pesanan = Pesanan::create([
+                    'nomor_pesanan' => $nomorPesananGroup,
+                    'user_id' => $user->id,
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $item['produk_id'],
+                    'ukuran_kertas_id' => $item['ukuran_kertas_id'],
+                    'jenis_kertas_id' => $item['jenis_kertas_id'],
+                    'jumlah' => $item['jumlah'],
+                    'file_desain' => $finalPath,
+                    'catatan' => $item['catatan'],
+                    'harga_satuan' => $item['harga_satuan'],
+                    'total_harga' => $item['total_harga'],
+                    'bukti_pembayaran' => $isCash ? 'Pesanan Langsung' : 'Midtrans Kasir',
+                    'estimasi_waktu' => $item['estimasi_waktu'],
+                    'finishing' => $item['finishing'] ?? 'Tidak Pakai',
+                    'opsi_potong' => !empty($item['opsi_potong']) ? $item['opsi_potong'] : null,
+                    'status' => $isCash ? 'dalam_antrian' : 'pending',
+                    'pembayaran_status' => $isCash ? 'paid' : 'pending',
+                    'dikonfirmasi_oleh' => auth()->id(),
+                    'dikonfirmasi_at' => $isCash ? now() : null,
+                ]);
+
+                $firstPesananId ??= $pesanan->id;
             }
 
-            Pesanan::create([
-                'nomor_pesanan' => Pesanan::generateNomorPesanan(),
-                'user_id' => $user->id,
-                'produk_id' => $item['produk_id'],
-                'ukuran_kertas_id' => $item['ukuran_kertas_id'],
-                'jenis_kertas_id' => $item['jenis_kertas_id'],
-                'jumlah' => $item['jumlah'],
-                'file_desain' => $finalPath,
-                'catatan' => $item['catatan'],
-                'harga_satuan' => $item['harga_satuan'],
-                'total_harga' => $item['total_harga'],
-                'bukti_pembayaran' => 'Pesanan Langsung',
-                'estimasi_waktu' => $item['estimasi_waktu'],
-                'finishing' => $item['finishing'] ?? 'Tidak Pakai',
-                'opsi_potong' => $item['opsi_potong'] ?? 'Potong Kotak',
-                'status' => 'dalam_antrian',
-                'dikonfirmasi_oleh' => auth()->id(),
-                'dikonfirmasi_at' => now(),
-            ]);
+            return [$transaksi, $firstPesananId];
+        });
+
+        if (!$isCash) {
+            try {
+                $snapToken = $this->midtransService->getSnapToken($transaksi);
+                $transaksi->update(['snap_token' => $snapToken]);
+            } catch (\Exception $e) {
+                session()->flash('error', 'Pesanan tersimpan, tetapi token pembayaran Midtrans belum bisa dibuat: ' . $e->getMessage());
+            }
         }
 
         session()->forget($this->walkInCartKey);
 
-        return redirect()->route('kasir.pesanan.index')
-            ->with('success', count($walkInCart) . ' item pesanan walk-in berhasil dibuat dan masuk antrian.');
-    }
-
-    private function calculateCustomPrice($slug, $ukuran, $bahan, $finishing, $potong, $jumlah = 1)
-    {
-        $price = 0;
-        if ($slug === 'poster') {
-            // Simplified size-based pricing
-            $price = ($ukuran === 'A3' || $ukuran === 'Custom') ? 7000 : 5000;
-        } elseif ($slug === 'sticker') {
-            // Size-based pricing for both vinyl and chromo
-            if (str_contains($bahan, 'Vinyl')) {
-                // Vinyl with size-based pricing
-                if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 11000;
-                elseif ($ukuran === 'A4') $price = 8000;
-                elseif ($ukuran === 'A5') $price = 6000;
-                elseif ($ukuran === 'A6') $price = 4000;
-                else $price = 8000; // default
-            } else {
-                // Chromo with size-based pricing
-                if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 8000;
-                elseif ($ukuran === 'A4') $price = 6000;
-                elseif ($ukuran === 'A5') $price = 4000;
-                elseif ($ukuran === 'A6') $price = 2000;
-                else $price = 6000; // default
-            }
-            // Add cutting options
-            if ($potong === 'Kiss Cut') $price += 4000;
-            elseif ($potong === 'Die Cut') $price += 8000;
-        } elseif ($slug === 'kartu-nama') {
-            $price = 480; // Per pcs
-            // For kartu nama, finishing is calculated differently
-            if ($finishing && is_array($finishing)) {
-                foreach ($finishing as $f) {
-                    if ($f === 'Glossy' || $f === 'Doff') {
-                        // Rp 4.000 per 25 pcs
-                        $finishingCost = ceil($jumlah / 25) * 4000;
-                        $price += ($finishingCost / $jumlah); // Distribute per pcs
-                    }
-                }
-            }
-            return $price; // Return early for kartu-nama
-        } elseif ($slug === 'kartu-ucapan') {
-            $price = 7000;
-        } elseif ($slug === 'brosur') {
-            // Size-based pricing for brosur
-            if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 5000;
-            elseif ($ukuran === 'A4') $price = 4000;
-            elseif ($ukuran === 'A5') $price = 3000;
-            elseif ($ukuran === 'A6') $price = 2000;
-            else $price = 5000; // default for unknown/custom
+        if ($isCash) {
+            return redirect()->route('kasir.pesanan.show', ['id' => $firstPesananId, 'show_created' => 1])
+                ->with('success', count($walkInCart) . ' item pesanan cash berhasil dibuat dan masuk antrian.');
         }
 
-        if ($finishing && is_array($finishing)) {
-            foreach ($finishing as $f) {
-                if ($f === 'Glossy' || $f === 'Doff') $price += 4000;
-            }
-        }
-        return $price;
-    }
-
-    private function normalizeFinishing($finishing)
-    {
-        if (is_array($finishing)) {
-            return array_values(array_filter($finishing));
-        }
-
-        if (is_string($finishing) && trim($finishing) !== '') {
-            return [trim($finishing)];
-        }
-
-        return [];
+        return redirect()->route('kasir.pesanan.show', $firstPesananId)
+            ->with('success', count($walkInCart) . ' item pesanan berhasil dibuat. Silakan lanjutkan pembayaran.');
     }
 
     /**

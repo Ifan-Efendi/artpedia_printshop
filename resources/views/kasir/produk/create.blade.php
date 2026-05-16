@@ -76,28 +76,63 @@
                                     <input type="number" name="min_order" id="min_order"
                                            class="form-control @error('min_order') is-invalid @enderror"
                                            value="{{ old('min_order', 1) }}" min="1" required>
-                                    <span class="input-group-text">pcs</span>
+                                    <span class="input-group-text">unit</span>
                                     @error('min_order')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
 
-                            {{-- Aktif --}}
-                            <div class="col-md-6">
+                            {{-- Status Produk --}}
+                            <div class="col-md-4">
                                 <label class="form-label">Status Produk</label>
                                 <div class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" name="aktif" id="aktif" value="1"
                                            {{ old('aktif', '1') ? 'checked' : '' }}
-                                           style="width: 3em; height: 1.5em; cursor: pointer;">
+                                           style="width: 2.5em; height: 1.25em; cursor: pointer;">
                                     <label class="form-check-label ms-2" for="aktif" id="aktifLabel">
                                         <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {{-- Butuh Finishing --}}
+                            <div class="col-md-4">
+                                <label class="form-label">Opsi Finishing</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="is_finishing" id="is_finishing" value="1"
+                                           {{ old('is_finishing') ? 'checked' : '' }}
+                                           style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                                    <label class="form-check-label ms-2" for="is_finishing" id="finishingLabel">
+                                        @if(old('is_finishing'))
+                                            <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
+                                        @else
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">Nonaktif</span>
+                                        @endif
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Opsi Cutting</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="is_cutting" id="is_cutting" value="1"
+                                           {{ old('is_cutting') ? 'checked' : '' }}
+                                           style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                                    <label class="form-check-label ms-2" for="is_cutting" id="cuttingLabel">
+                                        @if(old('is_cutting'))
+                                            <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
+                                        @else
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">Nonaktif</span>
+                                        @endif
                                     </label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+
 
                 <div class="card mt-4">
                     <div class="card-body">
@@ -208,15 +243,20 @@
         }
     });
 
-    // Toggle aktif label
-    document.getElementById('aktif').addEventListener('change', function() {
-        const label = document.getElementById('aktifLabel');
-        if (this.checked) {
-            label.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success">Aktif</span>';
-        } else {
-            label.innerHTML = '<span class="badge bg-secondary bg-opacity-10 text-secondary">Nonaktif</span>';
-        }
-    });
+    // Toggle labels
+    function setupToggle(id, labelId) {
+        document.getElementById(id).addEventListener('change', function() {
+            const label = document.getElementById(labelId);
+            if (this.checked) {
+                label.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success">Aktif</span>';
+            } else {
+                label.innerHTML = '<span class="badge bg-secondary bg-opacity-10 text-secondary">Nonaktif</span>';
+            }
+        });
+    }
 
+    setupToggle('aktif', 'aktifLabel');
+    setupToggle('is_finishing', 'finishingLabel');
+    setupToggle('is_cutting', 'cuttingLabel');
 </script>
 @endpush

@@ -36,17 +36,13 @@
                 href="{{ route('kasir.dashboard') }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <a class="nav-link {{ request()->routeIs('kasir.pesanan.create') ? 'active' : '' }}"
+            <a class="nav-link {{ request()->routeIs('kasir.pesanan.create') || request()->routeIs('kasir.cart.index') || request()->routeIs('kasir.checkout') ? 'active' : '' }}"
                 href="{{ route('kasir.pesanan.create') }}">
                 <i class="bi bi-plus-square"></i> Buat Pesanan
             </a>
             <a class="nav-link {{ request()->routeIs('kasir.produk.*') || request()->routeIs('kasir.kategori.*') ? 'active' : '' }}"
                 href="{{ route('kasir.produk.index') }}">
-                <i class="bi bi-box-seam"></i> Kelola Produk
-            </a>
-            <a class="nav-link {{ request()->routeIs('kasir.pesanan.index') || (request()->routeIs('kasir.pesanan.show') && !request()->routeIs('kasir.pesanan.create')) ? 'active' : '' }}"
-                href="{{ route('kasir.pesanan.index') }}">
-                <i class="bi bi-receipt"></i> Verifikasi Pesanan
+                <i class="bi bi-layers-half"></i> Kelola Produk
             </a>
             <a class="nav-link {{ request()->routeIs('kasir.antrian') ? 'active' : '' }}"
                 href="{{ route('kasir.antrian') }}">

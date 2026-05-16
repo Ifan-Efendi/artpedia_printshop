@@ -200,10 +200,54 @@
         .timeline-item.rejected .timeline-marker {
             box-shadow: 0 0 0 2px #ef4444;
         }
+
+        .order-items-table thead th {
+            background: #f8fafc;
+            color: var(--text-sub);
+            font-size: 0.82rem;
+            font-weight: 700;
+            border-bottom-color: #f3d3e7;
+        }
+
+        .order-items-table td {
+            vertical-align: top;
+            border-color: #f3d3e7;
+        }
+
+        .item-name {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text-strong);
+        }
+
+        .item-subtext {
+            font-size: 0.84rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .item-spec-line {
+            display: block;
+            font-size: 0.86rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .item-total {
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
     </style>
 @endpush
 
 @section('content')
+    @php
+        $pesananItems = $pesananItems ?? collect([$pesanan]);
+        $groupTotal = $groupTotal ?? (int) ($pesanan->transaksi->total_harga ?? $pesananItems->sum('total_harga'));
+        $itemCount = $pesananItems->count();
+    @endphp
+
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="detail-title mb-0"><i class="bi bi-receipt me-2" style="color: #9d005e;"></i>Detail Pesanan</h1>
@@ -251,7 +295,9 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 detail-card-title">Informasi Pesanan</h5>
-                    <span class="badge badge-{{ $pesanan->status }} fs-6">{{ $pesanan->status_label }}</span>
+                    <span class="badge badge-{{ $pesanan->status }} fs-6">
+                        {{ $pesanan->status == 'pending' ? 'Menunggu Pembayaran' : $pesanan->status_label }}
+                    </span>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -269,62 +315,69 @@
                         </div>
                         <div class="col-md-6 info-row">
                             <div class="info-box">
-                                <label class="detail-label">Produk</label>
-                                <div class="detail-value">{{ $pesanan->produk->nama ?? '-' }}</div>
+                                <label class="detail-label">Jumlah Produk</label>
+                                <div class="detail-value">{{ $itemCount }} item</div>
                             </div>
                         </div>
                         <div class="col-md-6 info-row">
                             <div class="info-box">
-                                <label class="detail-label">Kategori</label>
-                                <div class="detail-value">{{ $pesanan->produk->kategori->nama ?? '-' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 info-row">
-                            <div class="info-box">
-                                <label class="detail-label">Ukuran</label>
-                                <span class="detail-value">{{ $pesanan->ukuranKertas->nama ?? '-' }}</span>
-                                <div class="detail-meta">{{ $pesanan->ukuranKertas->dimensi ?? '' }}</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 info-row">
-                            <div class="info-box">
-                                <label class="detail-label">Jenis Kertas / Bahan</label>
-                                <span class="detail-value">{{ $pesanan->jenisKertas->nama ?? '-' }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-4 info-row">
-                            <div class="info-box">
-                                <label class="detail-label">Jumlah</label>
-                                <span class="qty-number">{{ $pesanan->jumlah }}</span>
-                                <span class="detail-meta ms-1">{{ str_contains($pesanan->produk->slug, 'kartu-nama') ? 'pcs' : 'lembar' }}</span>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="extra-box row g-3">
-                                <div class="col-md-6">
-                                    <div class="extra-item">
-                                        <label class="detail-label">Finishing</label>
-                                        <span class="extra-chip">
-                                            <i class="bi bi-magic"></i>{{ $pesanan->finishing ?? '-' }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="extra-item">
-                                        <label class="detail-label">Opsi Potong</label>
-                                        <span class="extra-chip">
-                                            <i class="bi bi-scissors"></i>{{ $pesanan->opsi_potong ?? '-' }}
-                                        </span>
-                                    </div>
+                                <label class="detail-label">Status Pembayaran</label>
+                                <div class="detail-value">
+                                    {{ ($pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status) === 'paid' ? 'Pembayaran Berhasil' : 'Menunggu Pembayaran' }}
                                 </div>
                             </div>
                         </div>
-                        @if($pesanan->catatan)
-                            <div class="col-12">
-                                <label class="text-muted small">Catatan</label>
-                                <div>{{ $pesanan->catatan }}</div>
+                        <div class="col-12 info-row">
+                            <div class="info-box p-0 overflow-hidden">
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0 order-items-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Produk</th>
+                                                <th>Spesifikasi</th>
+                                                <th>Jumlah</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($pesananItems as $item)
+                                                @php
+                                                    $itemFinishing = $item->finishing ?? null;
+                                                    $itemHasFinishing = !empty($itemFinishing) && strtolower(trim($itemFinishing)) !== 'tidak pakai';
+                                                    $itemCutting = $item->opsi_potong ?? null;
+                                                    $itemHasCutting = in_array($itemCutting, ['Kiss Cut', 'Die Cut'], true);
+                                                @endphp
+                                                <tr>
+                                                    <td>
+                                                        <div class="item-name">{{ $item->produk->nama ?? '-' }}</div>
+                                                        <span class="item-subtext">{{ $item->produk->kategori->nama ?? '-' }}</span>
+                                                        @if($item->catatan)
+                                                            <span class="item-spec-line mt-1">Catatan: {{ $item->catatan }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <span class="item-spec-line">Ukuran: {{ $item->ukuranKertas->nama ?? '-' }}{{ !empty($item->ukuranKertas->dimensi) ? ' (' . $item->ukuranKertas->dimensi . ')' : '' }}</span>
+                                                        <span class="item-spec-line">Bahan: {{ $item->jenisKertas->nama ?? '-' }}</span>
+                                                        @if($itemHasFinishing)
+                                                            <span class="item-spec-line">Finishing: {{ $itemFinishing }}</span>
+                                                        @endif
+                                                        @if($itemHasCutting)
+                                                            <span class="item-spec-line">Potong: {{ $itemCutting }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <span class="item-spec-line">{{ $item->jumlah }} {{ $item->produk->unit_label ?? 'lembar' }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="item-total">Rp {{ number_format($item->total_harga, 0, ',', '.') }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -355,8 +408,10 @@
                                 <h6 class="mb-1">
                                     @if($pesanan->status == 'ditolak')
                                         Pembayaran Ditolak
+                                    @elseif(($pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status) == 'paid')
+                                        Pembayaran Berhasil
                                     @else
-                                        Pembayaran Divalidasi
+                                        Menunggu Pembayaran
                                     @endif
                                 </h6>
                                 @if($pesanan->status == 'ditolak')
@@ -373,19 +428,26 @@
                                         <br><small class="text-muted">Oleh: {{ $pesanan->kasir->name }}</small>
                                     @endif
                                 @else
-                                    <small class="text-muted">Menunggu verifikasi kasir</small>
+                                    <small class="text-muted">
+                                        {{ ($pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status) == 'paid' ? 'Pembayaran berhasil' : 'Menunggu pembayaran' }}
+                                    </small>
                                 @endif
                             </div>
                         </div>
 
-                        <!-- Dalam Produksi -->
-                        <div class="timeline-item {{ $pesanan->mulai_produksi_at ? 'completed' : '' }}">
-                            <div class="timeline-marker {{ $pesanan->mulai_produksi_at ? 'bg-success' : 'bg-secondary' }}">
+                        <!-- Dalam Antrian -->
+                        @php
+                            $isInQueueOrBeyond = in_array($pesanan->status, ['dalam_antrian', 'diproses', 'selesai'], true);
+                        @endphp
+                        <div class="timeline-item {{ $isInQueueOrBeyond ? 'completed' : '' }}">
+                            <div class="timeline-marker {{ $isInQueueOrBeyond ? 'bg-success' : 'bg-secondary' }}">
                             </div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Dalam Produksi</h6>
-                                @if($pesanan->mulai_produksi_at)
-                                    <small class="text-muted">{{ $pesanan->mulai_produksi_at->format('d M Y, H:i') }}</small>
+                                <h6 class="mb-1">Dalam Antrian</h6>
+                                @if($isInQueueOrBeyond)
+                                    <small class="text-muted">
+                                        {{ optional($pesanan->dikonfirmasi_at ?? $pesanan->mulai_produksi_at)->format('d M Y, H:i') ?? '-' }}
+                                    </small>
                                     @if($pesanan->operator)
                                         <br><small class="text-muted">Oleh: {{ $pesanan->operator->name }}</small>
                                     @endif
@@ -423,51 +485,66 @@
                 <div class="card-body p-4 text-center">
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">Harga Satuan:</span>
-                            <span class="fw-bold">Rp {{ number_format($pesanan->harga_satuan, 0, ',', '.') }}</span>
+                            <span class="text-muted">Jumlah Produk:</span>
+                            <span class="fw-bold">{{ $itemCount }} item</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">Jumlah:</span>
-                            <span class="fw-bold">{{ $pesanan->jumlah }} {{ str_contains($pesanan->produk->slug, 'kartu-nama') ? 'pcs' : 'lembar' }}</span>
+                            <span class="text-muted">Nomor Pesanan:</span>
+                            <span class="fw-bold">{{ $pesanan->nomor_pesanan }}</span>
                         </div>
                     </div>
                     <hr class="my-3">
                     <div class="d-flex justify-content-between align-items-center mb-0">
                         <span class="fw-bold text-dark">Total:</span>
-                        <span class="summary-total mb-0">{{ $pesanan->total_harga_format }}</span>
+                        <span class="summary-total mb-0">Rp {{ number_format($groupTotal, 0, ',', '.') }}</span>
                     </div>
+
+                    @php
+                        $snapToken = $pesanan->transaksi->snap_token ?? $pesanan->snap_token;
+                        $isPaid = ($pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status) == 'paid';
+                    @endphp
+
+                    @if(!$isPaid && $snapToken)
+                        <div class="mt-4">
+                            <button id="pay-button" class="btn btn-success w-100 py-2 fw-bold fs-5" data-token="{{ $snapToken }}">
+                                <i class="bi bi-credit-card-2-back me-2"></i>Bayar Sekarang
+                            </button>
+                        </div>
+                    @elseif(!$isPaid && !$snapToken)
+                        <div class="mt-4">
+                            <div class="alert alert-warning small">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Sistem belum bisa membuat kode pembayaran. Mohon pastikan API Key Midtrans sudah benar.
+                            </div>
+                        </div>
+                    @elseif($isPaid)
+                        <div class="mt-4">
+                            <span class="badge bg-success w-100 py-3 fs-6">
+                                <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Berhasil
+                            </span>
+                        </div>
+                    @endif
                 </div>
             </div>
 
-            <!-- Files -->
+            <!-- File -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>File Upload</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>File Pesanan</h5>
                 </div>
                 <div class="card-body p-4">
-                    <div class="mb-4">
-                        <label class="text-muted small fw-bold mb-2 d-block">File Desain</label>
-                        <div class="d-flex align-items-center">
-                            <a href="{{ route('pelanggan.pesanan.file_desain', $pesanan->id) }}" target="_blank"
-                                class="btn btn-sm btn-outline-primary px-3">
-                                <i class="bi bi-eye-fill me-1"></i> Lihat File
-                            </a>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-muted small fw-bold mb-2 d-block">Bukti Pembayaran</label>
-                        <div>
-                            @if($pesanan->bukti_pembayaran == 'Pesanan Langsung')
-                                <span class="badge bg-success-subtle text-success py-2 px-3 border border-success-subtle">
-                                    <i class="bi bi-cash-stack me-1"></i> Pembayaran langsung di tempat
-                                </span>
-                            @else
-                                <a href="{{ route('pelanggan.pesanan.bukti_pembayaran', $pesanan->id) }}" target="_blank"
-                                    class="btn btn-sm btn-outline-success px-3">
-                                    <i class="bi bi-image me-1"></i> Lihat Bukti
-                                </a>
-                            @endif
-                        </div>
+                    <div class="d-flex flex-column gap-3">
+                        @foreach($pesananItems as $item)
+                            <div>
+                                <label class="text-muted small fw-bold mb-2 d-block">{{ $item->produk->nama ?? 'File Desain' }}</label>
+                                <div class="d-flex align-items-center">
+                                    <a href="{{ route('pelanggan.pesanan.file_desain', $item->id) }}" target="_blank"
+                                        class="btn btn-sm btn-outline-primary px-3">
+                                        <i class="bi bi-eye-fill me-1"></i> Lihat File
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -475,3 +552,73 @@
     </div>
 
 @endsection
+
+@if(!$isPaid && $snapToken)
+    @push('scripts')
+        <script src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+        <script type="text/javascript">
+            const payButton = document.getElementById('pay-button');
+            const paymentStatusUrl = "{{ route('pelanggan.pesanan.payment_status', $pesanan->id) }}";
+            let paymentPollingHandle = null;
+            let currentMidtransOrderId = null;
+
+            async function checkPaymentStatus() {
+                try {
+                    const url = currentMidtransOrderId
+                        ? `${paymentStatusUrl}?order_id=${encodeURIComponent(currentMidtransOrderId)}`
+                        : paymentStatusUrl;
+
+                    const response = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        cache: 'no-store'
+                    });
+
+                    if (!response.ok) return false;
+
+                    const data = await response.json();
+                    if (data.is_paid) {
+                        window.location.href = data.redirect_url;
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Gagal memeriksa status pembayaran', error);
+                }
+
+                return false;
+            }
+
+            function startPaymentPolling() {
+                if (paymentPollingHandle) return;
+
+                paymentPollingHandle = setInterval(async function () {
+                    const paid = await checkPaymentStatus();
+                    if (paid) {
+                        clearInterval(paymentPollingHandle);
+                    }
+                }, 4000);
+            }
+
+            payButton.addEventListener('click', function () {
+                window.snap.pay('{{ $snapToken }}', {
+                    onSuccess: function (result) {
+                        currentMidtransOrderId = result.order_id || currentMidtransOrderId;
+                        checkPaymentStatus();
+                        startPaymentPolling();
+                    },
+                    onPending: function (result) {
+                        currentMidtransOrderId = result.order_id || currentMidtransOrderId;
+                        startPaymentPolling();
+                    },
+                    onError: function () {
+                        alert("Pembayaran gagal!");
+                    },
+                    onClose: function () {
+                        startPaymentPolling();
+                    }
+                });
+            });
+
+            startPaymentPolling();
+        </script>
+    @endpush
+@endif

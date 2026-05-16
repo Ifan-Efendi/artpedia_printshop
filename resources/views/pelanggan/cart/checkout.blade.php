@@ -62,7 +62,7 @@
     <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h1><i class="bi bi-credit-card me-2"></i>Checkout Pesanan</h1>
-            <p>Upload bukti pembayaran untuk memproses semua item di keranjang</p>
+            <p>Lanjutkan pembayaran untuk memproses semua item di keranjang</p>
         </div>
         <a href="{{ route('pelanggan.cart.index') }}" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left me-2"></i> Kembali ke Keranjang
@@ -88,14 +88,27 @@
                             </thead>
                             <tbody>
                                 @foreach($cart as $item)
+                                    @php
+                                        $finishing = $item['finishing'] ?? null;
+                                        $hasFinishing = !empty($finishing) && strtolower(trim($finishing)) !== 'tidak pakai';
+                                        $cutting = $item['opsi_potong'] ?? null;
+                                        $hasCutting = in_array($cutting, ['Kiss Cut', 'Die Cut'], true);
+                                        $hasSpecs = $hasFinishing || $hasCutting;
+                                    @endphp
                                     <tr>
                                         <td>{{ $item['produk_nama'] }}</td>
                                         <td>
-                                            <span class="checkout-meta text-muted d-block">{{ $item['ukuran_nama'] }} | {{ $item['jenis_nama'] }}</span>
-                                            <span class="checkout-meta text-muted d-block">Finishing: {{ $item['finishing'] ?? 'Tidak Pakai' }}</span>
-                                            <span class="checkout-meta text-muted d-block">Potong: {{ $item['opsi_potong'] ?? 'Potong Kotak' }}</span>
+                                            @if($hasFinishing)
+                                                <span class="checkout-meta text-muted d-block">Finishing: {{ $finishing }}</span>
+                                            @endif
+                                            @if($hasCutting)
+                                                <span class="checkout-meta text-muted d-block">Potong: {{ $cutting }}</span>
+                                            @endif
+                                            @unless($hasSpecs)
+                                                <span class="checkout-meta text-muted d-block">-</span>
+                                            @endunless
                                         </td>
-                                        <td>{{ $item['jumlah'] }}</td>
+                                        <td>{{ $item['jumlah'] }} {{ $item['unit_label'] ?? 'lembar' }}</td>
                                         <td class="fw-bold">Rp {{ number_format($item['total_harga'], 0, ',', '.') }}</td>
                                     </tr>
                                 @endforeach
@@ -117,47 +130,21 @@
                         <div class="checkout-total">Rp {{ number_format($total, 0, ',', '.') }}</div>
                     </div>
 
-                    <div class="payment-box mb-3">
-                        <div class="checkout-title mb-2">Transfer Bank</div>
-                        <div class="bank-line">Bank: <strong>BANK SYARIAH INDONESIA</strong></div>
-                        <div class="bank-line">No. Rekening: <strong>6768000090</strong></div>
-                        <div class="bank-line mb-3">a.n <strong>PT BKS ARTPEDIA PRINT</strong></div>
-
-                        <div class="checkout-title mb-2">Pembayaran via QRIS</div>
-                        <button type="button" class="qris-thumb-btn" data-bs-toggle="modal" data-bs-target="#qrisModal">
-                            <img src="{{ asset('images/qris-artpedia.jpg') }}" alt="QRIS Artpedia" class="qris-thumb">
-                        </button>
-                        <div class="qris-hint mt-2">Klik gambar untuk memperbesar QRIS</div>
+                    <div class="payment-box mb-4">
+                        <div class="checkout-title mb-2 text-primary">
+                            <i class="bi bi-shield-check me-2"></i>Metode Pembayaran
+                        </div>
+                        <p class="checkout-meta text-muted mb-0">
+                            Metode pembayaran dapat digunakan: QRIS, Transfer Bank (Virtual Account), dan E-Wallet.
+                        </p>
                     </div>
 
-                    <form action="{{ route('pelanggan.checkout.process') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('pelanggan.checkout.process') }}" method="POST">
                         @csrf
-                        <div class="mb-3">
-                            <label for="bukti_pembayaran" class="form-label fw-bold">Upload Bukti Pembayaran</label>
-                            <input type="file" name="bukti_pembayaran" id="bukti_pembayaran" class="form-control @error('bukti_pembayaran') is-invalid @enderror" accept=".jpg,.jpeg,.png" required>
-                            @error('bukti_pembayaran')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <div class="checkout-meta text-muted mt-1">Format JPG/PNG, maksimal 5MB</div>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-check2-circle me-1"></i> Konfirmasi Checkout
+                        <button type="submit" class="btn btn-success w-100 py-3 fw-bold">
+                            <i class="bi bi-cart-check-fill me-2"></i> Konfirmasi Pemesanan
                         </button>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="qrisModalLabel">QRIS Pembayaran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <img src="{{ asset('images/qris-artpedia.jpg') }}" alt="QRIS Artpedia" class="img-fluid rounded">
                 </div>
             </div>
         </div>

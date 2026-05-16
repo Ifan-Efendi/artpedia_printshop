@@ -12,7 +12,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -746,18 +746,25 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     @auth
-        @if(auth()->user()->role === 'pelanggan' && session('feedback_prompt'))
+        @php
+            $shouldShowFeedbackModal = auth()->user()->role === 'pelanggan'
+                && (session('feedback_prompt') || request()->boolean('show_feedback'));
+        @endphp
+        @if($shouldShowFeedbackModal)
             <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                        <div class="position-absolute top-0 end-0 p-3" style="z-index: 2;">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
                         <div class="modal-body p-4 text-center">
                             <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
                                 style="width: 58px; height: 58px; background: rgba(22, 163, 74, 0.12); color: #15803d;">
                                 <i class="bi bi-check2-circle" style="font-size: 1.9rem;"></i>
                             </div>
-                            <h5 class="fw-bold mb-2 text-success">Pesanan Berhasil Dibuat</h5>
+                            <h5 class="fw-bold mb-2 text-success">Pembayaran Berhasil</h5>
                             <p class="text-muted mb-3">
-                                Pesanan Anda berhasil dibuat dan sedang menunggu proses validasi.
+                                Pembayaran Anda sudah kami terima. Pesanan akan segera kami proses.
                             </p>
                             <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
                                 style="width: 46px; height: 46px; background: rgba(157, 0, 94, 0.1); color: #9d005e;">
@@ -765,12 +772,18 @@
                             </div>
                             <h6 class="fw-bold mb-2">Bantu Kami Menjadi Lebih Baik</h6>
                             <p class="text-muted mb-0">
-                                Mohon luangkan waktu sebentar untuk membagikan pengalaman Anda menggunakan sistem pemesanan Artpedia.
+                                Mohon luangkan waktu sebentar untuk membagikan pengalaman Anda setelah melakukan pemesanan di Artpedia.
                             </p>
                         </div>
-                        <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3">
-                            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Nanti</button>
-                            <a href="https://www.google.com" target="_blank" rel="noopener" class="btn btn-primary px-4 fw-bold">
+                        <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3 d-flex justify-content-center gap-2 flex-wrap">
+                            <a href="{{ route('pelanggan.dashboard') }}"
+                                class="btn px-4 text-white fw-bold d-inline-flex align-items-center justify-content-center"
+                                style="background-color: #9d005e; border-color: #9d005e; min-width: 190px;">
+                                Kembali ke Dashboard
+                            </a>
+                            <a href="https://www.google.com" target="_blank" rel="noopener"
+                                class="btn btn-success px-4 fw-bold d-inline-flex align-items-center justify-content-center"
+                                style="min-width: 190px;">
                                 Isi Kuesioner
                             </a>
                         </div>
@@ -803,6 +816,15 @@
             const feedbackModal = document.getElementById('feedbackModal');
             if (feedbackModal) {
                 new bootstrap.Modal(feedbackModal).show();
+
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.has('show_feedback')) {
+                    currentUrl.searchParams.delete('show_feedback');
+                    const nextUrl = currentUrl.pathname
+                        + (currentUrl.search ? currentUrl.search : '')
+                        + currentUrl.hash;
+                    window.history.replaceState({}, document.title, nextUrl);
+                }
             }
         });
     </script>
@@ -811,8 +833,8 @@
         @if(auth()->user()->role === 'pelanggan')
             <!-- Bottom Navigation for Mobile -->
             <nav class="bottom-nav d-md-none">
-                <a href="{{ route('home') }}" class="bottom-nav-item {{ request()->routeIs('home') ? 'active' : '' }}">
-                    <i class="bi bi-house-door{{ request()->routeIs('home') ? '-fill' : '' }}"></i>
+                <a href="{{ route('home') }}" class="bottom-nav-item {{ request()->routeIs('home') || request()->routeIs('pelanggan.dashboard') ? 'active' : '' }}">
+                    <i class="bi bi-house-door{{ request()->routeIs('home') || request()->routeIs('pelanggan.dashboard') ? '-fill' : '' }}"></i>
                     <span>Beranda</span>
                 </a>
                 <a href="{{ route('katalog') }}" class="bottom-nav-item {{ request()->routeIs('katalog') ? 'active' : '' }}">

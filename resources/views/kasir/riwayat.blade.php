@@ -37,7 +37,7 @@
                                     </td>
                                     <td>
                                         <a href="{{ route('kasir.pesanan.show', $pesanan->id) }}"
-                                            class="btn btn-sm btn-outline-primary">Detail</a>
+                                            class="btn btn-sm text-white" style="background: #c00073; border-color: #c00073;">Detail</a>
                                     </td>
                                 </tr>
                             @endforeach

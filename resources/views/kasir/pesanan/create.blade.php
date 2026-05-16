@@ -234,7 +234,7 @@
             <div class="card shadow-sm order-builder">
                 <div class="card-body p-4">
                     <div class="alert alert-info mb-4">
-                        <span class="order-note-text mb-0 d-block">Item yang ditambahkan akan tersimpan sementara di daftar pesanan langsung sebelum diproses.</span>
+                        <span class="order-note-text mb-0 d-block">Setelah produk ditambahkan, lanjutkan checkout di keranjang pesanan.</span>
                     </div>
 
                     <form action="{{ route('kasir.pesanan.item.add') }}" method="POST" enctype="multipart/form-data" id="itemForm">
@@ -247,7 +247,7 @@
                                     <div class="step-title">Pilih Produk & Spesifikasi</div>
                                 </div>
 
-                                <p class="text-muted mb-3">Isi detail pesanan, lalu tambahkan ke daftar item.</p>
+                                <p class="text-muted mb-3">Isi detail pesanan, lalu tambahkan ke keranjang.</p>
 
                                 <div class="mb-3">
                                     <label for="kategori_id" class="form-label">Kategori Produk</label>
@@ -277,7 +277,7 @@
                                         <div class="col-md-6 mb-3">
                                             <label for="jumlah" class="form-label">Jumlah Order</label>
                                             <input type="number" name="jumlah" id="jumlah" class="form-control" value="1" min="1" required>
-                                            <div class="order-meta text-muted mt-1">Min. Order: 1</div>
+                                            <div class="order-meta text-muted mt-1" id="min-order-text">Min. Order: 1</div>
                                         </div>
                                     </div>
 
@@ -341,12 +341,6 @@
                                         <i class="bi bi-file-earmark-arrow-up-fill d-block mb-2"></i>
                                         <div class="fw-semibold mb-2 text-dark">Upload File Cetak</div>
                                         <input type="file" name="file_desain" id="file_desain" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
-                                        <div class="form-check mt-2 text-start">
-                                            <input class="form-check-input" type="checkbox" id="foto_produk_nanti" name="foto_produk_nanti" value="1">
-                                            <label class="form-check-label small" for="foto_produk_nanti">
-                                                Foto produk nanti saya kirim
-                                            </label>
-                                        </div>
                                     </div>
 
                                     <div class="step-head">
@@ -357,7 +351,7 @@
                                     <div class="checkout-box">
                                         <div class="checkout-total mb-3"><span id="total_price">Rp 0</span></div>
                                         <button type="submit" class="btn btn-add-cart w-100 py-2">
-                                            <i class="bi bi-cart-plus me-2"></i> Masukkan ke Keranjang
+                                            <i class="bi bi-cart-plus me-2"></i> Tambah ke Keranjang
                                         </button>
                                     </div>
                                 </div>
@@ -367,7 +361,7 @@
                     @if(count($walkInCart) > 0)
                         <div class="extras-box mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div>
-                                <div class="step-title mb-1">{{ count($walkInCart) }} item ada di keranjang kasir</div>
+                                <div class="step-title mb-1">{{ count($walkInCart) }} item ada di keranjang pesanan</div>
                                 <div class="order-meta text-muted">Total sementara: Rp {{ number_format($walkInTotal, 0, ',', '.') }}</div>
                             </div>
                             <a href="{{ route('kasir.cart.index') }}" class="btn btn-success px-4 fw-bold">
@@ -384,23 +378,27 @@
 @push('scripts')
 <script>
     const produkOptions = @json($produkOptions);
+    const produkMap = Object.fromEntries(produkOptions.map(produk => [String(produk.id), produk]));
     const kategoriSelect = document.getElementById('kategori_id');
     const produkSelect = document.getElementById('produk_id');
+    const jumlahInput = document.getElementById('jumlah');
+    const minOrderText = document.getElementById('min-order-text');
+    const finishingGroup = document.getElementById('finishing-group');
+    const cuttingGroup = document.getElementById('cutting-group');
 
     kategoriSelect.addEventListener('change', function() {
         fillProdukByKategori(this.value);
     });
 
     document.getElementById('produk_id').addEventListener('change', function() {
-        const selected = this.options[this.selectedIndex];
-        const slug = selected ? selected.dataset.slug : '';
+        const produk = produkMap[String(this.value)] || null;
         const section = document.getElementById('options-section');
         const rightSection = document.getElementById('options-right');
 
-        if (this.value && slug) {
+        if (produk) {
             section.style.display = 'block';
             rightSection.style.display = 'block';
-            updateOptions(slug);
+            updateOptions(produk);
             calculateTotal();
         } else {
             section.style.display = 'none';
@@ -424,65 +422,84 @@
                 `${produk.nama} - Rp ${Number(produk.harga_satuan).toLocaleString('id-ID')}`,
                 produk.id
             );
-            option.dataset.slug = produk.slug;
-            option.dataset.harga = produk.harga_satuan;
             produkSelect.add(option);
         });
 
         produkSelect.disabled = filtered.length === 0;
     }
 
-    function updateOptions(slug) {
-        const cGroup = document.getElementById('cutting-group');
+    function updateOptions(produk) {
+        const minOrder = Math.max(parseInt(produk.min_order || 1, 10), 1);
+        const unitLabel = produk.unit_label || 'lembar';
 
-        if (slug.includes('sticker')) {
-            cGroup.style.display = 'block';
-        } else {
-            cGroup.style.display = 'none';
-            document.querySelectorAll('.cutting-opt').forEach(el => el.checked = false);
+        jumlahInput.min = minOrder;
+        if (parseInt(jumlahInput.value || 0, 10) < minOrder) {
+            jumlahInput.value = minOrder;
+        }
+
+        if (minOrderText) {
+            minOrderText.innerText = `Min. Order: ${minOrder} ${unitLabel}`;
+        }
+
+        if (finishingGroup) {
+            finishingGroup.style.display = produk.is_finishing ? 'block' : 'none';
+            if (!produk.is_finishing) {
+                const noneOption = document.querySelector('input[name="finishing"][value=""]');
+                if (noneOption) {
+                    noneOption.checked = true;
+                }
+            }
+        }
+
+        if (cuttingGroup) {
+            cuttingGroup.style.display = produk.is_cutting ? 'block' : 'none';
+            if (!produk.is_cutting) {
+                document.querySelectorAll('.cutting-opt').forEach(el => el.checked = false);
+            }
         }
     }
 
-    function calculateTotal() {
-        const produkSelect = document.getElementById('produk_id');
-        if (!produkSelect.value) return;
+    async function calculateTotal() {
+        const produkId = document.getElementById('produk_id').value;
+        if (!produkId) return;
 
-        const produkOpt = produkSelect.options[produkSelect.selectedIndex];
-        const hargaBase = parseFloat(produkOpt.dataset.harga || 0);
-        const qty = parseFloat(document.getElementById('jumlah').value || 0);
+        const produk = produkMap[String(produkId)] || null;
+        if (!produk) return;
 
-        let additional = 0;
+        const qty = Math.max(parseInt(document.getElementById('jumlah').value || 1, 10), parseInt(produk.min_order || 1, 10));
+        if (parseInt(document.getElementById('jumlah').value || 0, 10) !== qty) {
+            document.getElementById('jumlah').value = qty;
+        }
         const fin = document.querySelector('input[name="finishing"]:checked');
-        if (fin && fin.value) additional += parseFloat(fin.dataset.harga || 0);
-
         const cut = document.querySelector('input[name="opsi_potong"]:checked');
-        if (cut && cut.value) additional += parseFloat(cut.dataset.harga || 0);
 
-        const total = (hargaBase + additional) * qty;
-        document.getElementById('total_price').innerText = 'Rp ' + total.toLocaleString('id-ID');
+        try {
+            const response = await fetch("{{ route('kasir.hitung-harga') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    produk_id: produkId,
+                    jumlah: qty,
+                    finishing: produk.is_finishing && fin && fin.value ? fin.value : null,
+                    opsi_potong: produk.is_cutting && cut && cut.value ? cut.value : null,
+                }),
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            document.getElementById('total_price').innerText = data.total_harga_format;
+        } catch (error) {
+            console.error('Gagal menghitung harga', error);
+        }
     }
 
     document.getElementById('jumlah').addEventListener('input', calculateTotal);
     document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', calculateTotal));
-
-    const fotoProdukNanti = document.getElementById('foto_produk_nanti');
-    const fileDesainInput = document.getElementById('file_desain');
-
-    function syncFotoProdukRequirement() {
-        if (!fotoProdukNanti || !fileDesainInput) return;
-
-        if (fotoProdukNanti.checked) {
-            fileDesainInput.required = false;
-            fileDesainInput.value = '';
-        } else {
-            fileDesainInput.required = true;
-        }
-    }
-
-    if (fotoProdukNanti) {
-        fotoProdukNanti.addEventListener('change', syncFotoProdukRequirement);
-        syncFotoProdukRequirement();
-    }
 
     fillProdukByKategori(null);
 </script>

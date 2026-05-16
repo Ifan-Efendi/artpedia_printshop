@@ -1,199 +1,341 @@
 @extends('layouts.app')
 
-@section('title', 'Verifikasi Pesanan ' . $pesanan->nomor_pesanan)
+@section('title', 'Detail Pesanan ' . $pesanan->nomor_pesanan)
 
 @push('styles')
-<style>
-    .kasir-detail-card {
-        border: 1px solid #f1c3dd;
-        border-radius: 8px;
-        box-shadow: none;
-    }
+    <style>
+        :root {
+            --text-main: #7a0049;
+            --text-sub: #8b5c7a;
+            --text-strong: #5f0038;
+            --font-label: 0.82rem;
+            --font-value: 0.95rem;
+            --font-meta: 0.88rem;
+        }
 
-    .kasir-detail-card .card-header {
-        background: #fde7f3;
-        border-bottom: 1px solid #f3d3e7;
-    }
+        .card {
+            border: 1px solid #f1c3dd;
+            border-radius: 8px;
+            box-shadow: none;
+        }
 
-    .ks-detail-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #7a0049;
-    }
+        .card-header {
+            background: #fde7f3;
+            border-bottom: 1px solid #f3d3e7;
+        }
 
-    .ks-label {
-        font-size: 0.82rem;
-        color: #8b5c7a;
-        margin-bottom: 0.1rem;
-        display: block;
-    }
+        .detail-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
 
-    .ks-value {
-        font-size: 0.95rem;
-        color: #5f0038;
-        font-weight: 600;
-    }
+        .detail-card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
 
-    .ks-meta {
-        font-size: 0.88rem;
-        color: #8b5c7a;
-    }
+        .detail-label {
+            font-size: var(--font-label);
+            color: var(--text-sub);
+            margin-bottom: 0.1rem;
+            display: block;
+        }
 
-    .ks-order-code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 0.92rem;
-        color: #7a0049;
-        font-weight: 700;
-    }
+        .detail-value {
+            font-size: var(--font-value);
+            color: var(--text-strong);
+            font-weight: 600;
+        }
 
-    .ks-qty {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #7a0049;
-        line-height: 1;
-    }
+        .detail-meta {
+            font-size: var(--font-meta);
+            color: var(--text-sub);
+        }
 
-    .ks-info-box {
-        border: 1px solid #f1c3dd;
-        border-radius: 8px;
-        background: #fff;
-        padding: 0.55rem 0.65rem;
-        height: 100%;
-    }
+        .order-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
 
-    .ks-extra-box {
-        margin-top: 0.4rem;
-        padding: 0.65rem;
-        border: 1px solid #f3d3e7;
-        border-radius: 8px;
-        background: #fdf2f8;
-    }
+        .info-row {
+            margin-bottom: 0.15rem;
+        }
 
-    .ks-extra-item {
-        border: 1px solid #f1c3dd;
-        border-radius: 8px;
-        background: #fff;
-        padding: 0.55rem;
-        height: 100%;
-    }
+        .info-box {
+            border: 1px solid #f1c3dd;
+            border-radius: 8px;
+            background: #fff;
+            padding: 0.55rem 0.65rem;
+            height: 100%;
+        }
 
-    .ks-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        border: 1px solid #f1c3dd;
-        border-radius: 8px;
-        background: #fff;
-        color: #7a0049;
-        font-size: 0.88rem;
-        font-weight: 600;
-        padding: 0.3rem 0.6rem;
-        width: 100%;
-    }
+        .summary-total {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
 
-    .timeline {
-        position: relative;
-        padding-left: 30px;
-    }
+        .timeline-content h6 {
+            font-size: 0.98rem;
+            color: var(--text-strong);
+        }
 
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 8px;
-        top: 5px;
-        bottom: 5px;
-        width: 2px;
-        background: #e2e8f0;
-    }
+        .timeline-content small {
+            font-size: var(--font-meta);
+            color: var(--text-sub);
+        }
 
-    .timeline-item {
-        position: relative;
-        padding-bottom: 1.5rem;
-    }
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
 
-    .timeline-item:last-child {
-        padding-bottom: 0;
-    }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background: #e2e8f0;
+        }
 
-    .timeline-marker {
-        position: absolute;
-        left: -26px;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 0 0 2px #e2e8f0;
-    }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
 
-    .timeline-item.completed .timeline-marker {
-        box-shadow: 0 0 0 2px #10b981;
-    }
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
 
-    .timeline-item.rejected .timeline-marker {
-        box-shadow: 0 0 0 2px #ef4444;
-    }
-</style>
+        .timeline-marker {
+            position: absolute;
+            left: -26px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #e2e8f0;
+        }
+
+        .timeline-item.completed .timeline-marker {
+            box-shadow: 0 0 0 2px #10b981;
+        }
+
+        .timeline-item.rejected .timeline-marker {
+            box-shadow: 0 0 0 2px #ef4444;
+        }
+
+        .order-items-table thead th {
+            background: #f8fafc;
+            color: var(--text-sub);
+            font-size: 0.82rem;
+            font-weight: 700;
+            border-bottom-color: #f3d3e7;
+        }
+
+        .order-items-table td {
+            vertical-align: top;
+            border-color: #f3d3e7;
+        }
+
+        .item-name {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text-strong);
+        }
+
+        .item-subtext {
+            font-size: 0.84rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .item-spec-line {
+            display: block;
+            font-size: 0.86rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .item-total {
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+    </style>
 @endpush
 
 @section('content')
+    @php
+        $pesananItems = $pesananItems ?? collect([$pesanan]);
+        $groupTotal = $groupTotal ?? (int) ($pesanan->transaksi->total_harga ?? $pesananItems->sum('total_harga'));
+        $itemCount = $pesananItems->count();
+        $paymentStatus = $pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status;
+        $isPaid = $paymentStatus === 'paid';
+        $isCashless = $pesanan->bukti_pembayaran === 'Midtrans Kasir';
+        $paymentStatusLabel = $isPaid ? 'Pembayaran Berhasil' : 'Menunggu Pembayaran';
+        $canCancel = in_array($pesanan->status, ['pending', 'dalam_antrian'], true) && !$isPaid;
+        $isInQueueOrBeyond = in_array($pesanan->status, ['dalam_antrian', 'diproses', 'selesai'], true);
+        $snapToken = $pesanan->transaksi->snap_token ?? $pesanan->snap_token;
+        $rawEmail = $pesanan->user->email ?? null;
+        $phoneDigits = preg_replace('/\D+/', '', (string) ($pesanan->user->telepon ?? ''));
+        $emailDigits = preg_replace('/\D+/', '', (string) $rawEmail);
+        $isPlaceholderEmail = blank($rawEmail)
+            || str_starts_with((string) $rawEmail, 'walkin+')
+            || (($phoneDigits !== '') && $emailDigits === $phoneDigits && str_ends_with((string) $rawEmail, '@artpedia.com'));
+        $displayEmail = $isPlaceholderEmail ? '-' : $rawEmail;
+    @endphp
+
     <div class="page-header">
-        <h1 class="h3 fw-bold fw-bold mb-0" style="color: #451a03;">Verifikasi Pembayaran</h1>
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="detail-title mb-0"><i class="bi bi-receipt me-2" style="color: #9d005e;"></i>Detail Pesanan</h1>
+            @if($canCancel)
+                <button type="button" class="btn btn-danger" style="background-color: #dc3545; border-color: #dc3545;"
+                    data-bs-toggle="modal" data-bs-target="#batalPesananModal">
+                    <i class="bi bi-trash me-2"></i>Batalkan Pesanan
+                </button>
+            @endif
+        </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Image/Bukti -->
-        <div class="col-lg-6">
-            <div class="card mb-3 shadow-sm border-0">
-                <div class="card-header bg-success text-white py-2">
-                    <h5 class="mb-0 small fw-bold"><i class="bi bi-image me-2"></i>Bukti Pembayaran</h5>
-                </div>
-                <div class="card-body p-2">
-                    @if($pesanan->bukti_pembayaran == 'Pesanan Langsung')
-                        <div class="p-4 text-center">
-                            <i class="bi bi-cash-stack display-4 text-success mb-3"></i>
-                            <h5 class="fw-bold">Pembayaran langsung di tempat</h5>
-                            <p class="text-muted mb-0">Pesanan ini dibuat dan dibayar di kasir.</p>
+    @if($canCancel)
+        <div class="modal fade" id="batalPesananModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                    <div class="modal-body p-4 text-center">
+                        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                            style="width: 58px; height: 58px; background: rgba(220, 38, 38, 0.12); color: #b91c1c;">
+                            <i class="bi bi-x-circle" style="font-size: 1.9rem;"></i>
                         </div>
-                            @else
-                            <div class="p-2 text-center">
-                            <img src="{{ route('kasir.pesanan.bukti_pembayaran', $pesanan->id) }}" class="img-fluid rounded shadow-sm mb-3"
-                                alt="Bukti Bayar" style="max-height: 250px; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#buktiModal">
-                            <div class="d-grid">
-                                <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#buktiModal">
-                                    <i class="bi bi-fullscreen me-2"></i> Lihat Bukti Transfer
-                                </button>
-                            </div>
-                        </div>
-                    @endif
+                        <h5 class="fw-bold mb-2">Batalkan Pesanan?</h5>
+                        <p class="text-muted mb-0">
+                            Pesanan <strong>{{ $pesanan->nomor_pesanan }}</strong> akan dibatalkan.
+                        </p>
+                    </div>
+                    <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Kembali</button>
+                        <form action="{{ route('kasir.pesanan.batalkan', $pesanan->id) }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="btn btn-danger px-4 fw-bold">
+                                <i class="bi bi-x-circle me-1"></i> Ya, Batalkan
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
+        </div>
+    @endif
 
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-header bg-light py-2">
-                    <h5 class="mb-0 small fw-bold"><i class="bi bi-file-earmark-code me-2" style="color: #9d005e;"></i>File Desain</h5>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 detail-card-title">Informasi Pesanan</h5>
+                    <span class="badge badge-{{ $pesanan->status }} fs-6">
+                        {{ $pesanan->status === 'pending' ? 'Menunggu Pembayaran' : $pesanan->status_label }}
+                    </span>
                 </div>
-                <div class="card-body py-2">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <span class="text-truncate me-2 small">
-                            {{ $pesanan->file_desain === 'NANTI_DIKIRIM' ? 'Foto produk menyusul' : basename($pesanan->file_desain) }}
-                        </span>
-                        @if($pesanan->file_desain === 'NANTI_DIKIRIM')
-                            <span class="badge bg-warning text-dark">Menyusul</span>
-                        @else
-                            <a href="{{ route('kasir.pesanan.file_desain', $pesanan->id) }}" target="_blank"
-                                class="btn btn-warning btn-sm px-2 py-1 text-dark">
-                                <i class="bi bi-download"></i> Unduh
-                            </a>
-                        @endif
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 info-row">
+                            <div class="info-box">
+                                <label class="detail-label">Nomor Pesanan</label>
+                                <div class="order-code">{{ $pesanan->nomor_pesanan }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 info-row">
+                            <div class="info-box">
+                                <label class="detail-label">Tanggal Pesanan</label>
+                                <div class="detail-value">{{ $pesanan->created_at->format('d M Y, H:i') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 info-row">
+                            <div class="info-box">
+                                <label class="detail-label">Jumlah Produk</label>
+                                <div class="detail-value">{{ $itemCount }} item</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 info-row">
+                            <div class="info-box">
+                                <label class="detail-label">Status Pembayaran</label>
+                                <div class="detail-value">{{ $paymentStatusLabel }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 info-row">
+                            <div class="info-box">
+                                <label class="detail-label">Data Pemesan</label>
+                                <div class="detail-value">{{ $pesanan->user->name ?? '-' }}</div>
+                                <div class="detail-meta">{{ $pesanan->user->telepon ?? '-' }}</div>
+                                <div class="detail-meta">{{ $displayEmail }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 info-row">
+                            <div class="info-box p-0 overflow-hidden">
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0 order-items-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Produk</th>
+                                                <th>Spesifikasi</th>
+                                                <th>Jumlah</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($pesananItems as $item)
+                                                @php
+                                                    $itemFinishing = $item->finishing ?? null;
+                                                    $itemHasFinishing = !empty($itemFinishing) && strtolower(trim($itemFinishing)) !== 'tidak pakai';
+                                                    $itemCutting = $item->opsi_potong ?? null;
+                                                    $itemHasCutting = in_array($itemCutting, ['Kiss Cut', 'Die Cut'], true);
+                                                @endphp
+                                                <tr>
+                                                    <td>
+                                                        <div class="item-name">{{ $item->produk->nama ?? '-' }}</div>
+                                                        <span class="item-subtext">{{ $item->produk->kategori->nama ?? '-' }}</span>
+                                                        @if($item->catatan)
+                                                            <span class="item-spec-line mt-1">Catatan: {{ $item->catatan }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <span class="item-spec-line">Ukuran: {{ $item->ukuranKertas->nama ?? '-' }}{{ !empty($item->ukuranKertas->dimensi) ? ' (' . $item->ukuranKertas->dimensi . ')' : '' }}</span>
+                                                        <span class="item-spec-line">Bahan: {{ $item->jenisKertas->nama ?? '-' }}</span>
+                                                        @if($itemHasFinishing)
+                                                            <span class="item-spec-line">Finishing: {{ $itemFinishing }}</span>
+                                                        @endif
+                                                        @if($itemHasCutting)
+                                                            <span class="item-spec-line">Potong: {{ $itemCutting }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <span class="item-spec-line">{{ $item->jumlah }} {{ $item->produk->unit_label ?? 'lembar' }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="item-total">Rp {{ number_format($item->total_harga, 0, ',', '.') }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light py-2">
-                    <h5 class="mb-0 small fw-bold"><i class="bi bi-clock-history me-2" style="color: #9d005e;"></i>Tracking Status</h5>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Tracking Status</h5>
                 </div>
-                <div class="card-body py-3">
+                <div class="card-body">
                     <div class="timeline">
                         <div class="timeline-item {{ $pesanan->created_at ? 'completed' : '' }}">
                             <div class="timeline-marker bg-success"></div>
@@ -203,17 +345,19 @@
                             </div>
                         </div>
 
-                        <div class="timeline-item {{ $pesanan->dikonfirmasi_at ? 'completed' : ($pesanan->status == 'ditolak' ? 'rejected' : '') }}">
-                            <div class="timeline-marker {{ $pesanan->dikonfirmasi_at ? 'bg-success' : ($pesanan->status == 'ditolak' ? 'bg-danger' : 'bg-secondary') }}"></div>
+                        <div class="timeline-item {{ $pesanan->dikonfirmasi_at ? 'completed' : ($pesanan->status === 'ditolak' ? 'rejected' : '') }}">
+                            <div class="timeline-marker {{ $pesanan->dikonfirmasi_at ? 'bg-success' : ($pesanan->status === 'ditolak' ? 'bg-danger' : 'bg-secondary') }}"></div>
                             <div class="timeline-content">
                                 <h6 class="mb-1">
-                                    @if($pesanan->status == 'ditolak')
+                                    @if($pesanan->status === 'ditolak')
                                         Pembayaran Ditolak
+                                    @elseif($isPaid)
+                                        Pembayaran Berhasil
                                     @else
-                                        Pembayaran Divalidasi
+                                        Menunggu Pembayaran
                                     @endif
                                 </h6>
-                                @if($pesanan->status == 'ditolak')
+                                @if($pesanan->status === 'ditolak')
                                     @if($pesanan->dikonfirmasi_at)
                                         <small class="text-muted">{{ $pesanan->dikonfirmasi_at->format('d M Y, H:i') }}</small>
                                     @endif
@@ -227,17 +371,19 @@
                                         <br><small class="text-muted">Oleh: {{ $pesanan->kasir->name }}</small>
                                     @endif
                                 @else
-                                    <small class="text-muted">Menunggu verifikasi kasir</small>
+                                    <small class="text-muted">{{ $isPaid ? 'Pembayaran berhasil' : 'Menunggu pembayaran' }}</small>
                                 @endif
                             </div>
                         </div>
 
-                        <div class="timeline-item {{ $pesanan->mulai_produksi_at ? 'completed' : '' }}">
-                            <div class="timeline-marker {{ $pesanan->mulai_produksi_at ? 'bg-success' : 'bg-secondary' }}"></div>
+                        <div class="timeline-item {{ $isInQueueOrBeyond ? 'completed' : '' }}">
+                            <div class="timeline-marker {{ $isInQueueOrBeyond ? 'bg-success' : 'bg-secondary' }}"></div>
                             <div class="timeline-content">
-                                <h6 class="mb-1">Dalam Produksi</h6>
-                                @if($pesanan->mulai_produksi_at)
-                                    <small class="text-muted">{{ $pesanan->mulai_produksi_at->format('d M Y, H:i') }}</small>
+                                <h6 class="mb-1">Dalam Antrian</h6>
+                                @if($isInQueueOrBeyond)
+                                    <small class="text-muted">
+                                        {{ optional($pesanan->dikonfirmasi_at ?? $pesanan->mulai_produksi_at)->format('d M Y, H:i') ?? '-' }}
+                                    </small>
                                     @if($pesanan->operator)
                                         <br><small class="text-muted">Oleh: {{ $pesanan->operator->name }}</small>
                                     @endif
@@ -263,227 +409,227 @@
             </div>
         </div>
 
-        <!-- Details and Actions -->
-        <div class="col-lg-6">
-            <div class="card mb-3 kasir-detail-card">
-                <div class="card-header py-2">
-                    <h5 class="mb-0 ks-detail-title">Detail Pesanan</h5>
+        <div class="col-lg-4">
+            <div class="card mb-4 overflow-hidden">
+                <div class="card-header py-3">
+                    <h5 class="mb-0 detail-card-title"><i class="bi bi-receipt me-2"></i>Ringkasan Pembayaran</h5>
                 </div>
-                <div class="card-body py-2">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <div class="ks-info-box">
-                                <label class="ks-label">No. Pesanan</label>
-                                <div class="ks-order-code">{{ $pesanan->nomor_pesanan }}</div>
-                            </div>
+                <div class="card-body p-4 text-center">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Jumlah Produk:</span>
+                            <span class="fw-bold">{{ $itemCount }} item</span>
                         </div>
-                        <div class="col-6">
-                            <div class="ks-info-box">
-                                <label class="ks-label">Tanggal</label>
-                                <div class="ks-value">{{ $pesanan->created_at->format('d M Y, H:i') }}</div>
-                            </div>
+                        <div class="d-flex justify-content-between mb-2 small">
+                            <span class="text-muted">Nomor Pesanan:</span>
+                            <span class="fw-bold">{{ $pesanan->nomor_pesanan }}</span>
                         </div>
-                        <div class="col-12">
-                            <div class="ks-info-box">
-                                <label class="ks-label">Pelanggan</label>
-                                <div class="ks-value">{{ $pesanan->user->name }}</div>
-                                <div class="ks-meta">{{ $pesanan->user->telepon }}</div>
-                            </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between align-items-center mb-0">
+                        <span class="fw-bold text-dark">Total:</span>
+                        <span class="summary-total mb-0">Rp {{ number_format($groupTotal, 0, ',', '.') }}</span>
+                    </div>
+
+                    @if(!$isPaid && $isCashless && $snapToken)
+                        <div class="mt-4">
+                            <button id="kasir-pay-button" class="btn btn-success w-100 py-2 fw-bold fs-5" data-token="{{ $snapToken }}">
+                                <i class="bi bi-credit-card-2-back me-2"></i>Bayar Sekarang
+                            </button>
                         </div>
-                        <div class="col-12">
-                            <div class="ks-info-box">
-                                <label class="ks-label">Produk & Spesifikasi</label>
-                                <div class="ks-value">{{ $pesanan->produk->nama ?? '-' }}</div>
-                                <div class="ks-meta mb-2">{{ $pesanan->ukuranKertas->nama ?? '-' }} | {{ $pesanan->jenisKertas->nama ?? '-' }}</div>
-                                <span class="ks-qty">{{ $pesanan->jumlah }}</span>
-                                <span class="ks-meta ms-1">{{ str_contains($pesanan->produk->slug, 'kartu-nama') ? 'pcs' : 'lembar' }}</span>
-                            </div>
+                    @elseif(!$isPaid && !$isCashless)
+                        <div class="mt-4">
+                            <span class="badge bg-warning text-dark w-100 py-3 fs-6">
+                                <i class="bi bi-hourglass-split me-2"></i>{{ $paymentStatusLabel }}
+                            </span>
                         </div>
-                        <div class="col-12">
-                            <div class="ks-extra-box row g-3">
-                                <div class="col-md-6">
-                                    <div class="ks-extra-item">
-                                        <label class="ks-label">Finishing</label>
-                                        <span class="ks-chip"><i class="bi bi-magic"></i>{{ $pesanan->finishing ?? '-' }}</span>
-                                    </div>
+                    @elseif($isPaid)
+                        <div class="mt-4">
+                            <span class="badge bg-success w-100 py-3 fs-6">
+                                <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Berhasil
+                            </span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>File Pesanan</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column gap-3">
+                        @foreach($pesananItems as $item)
+                            <div>
+                                <label class="text-muted small fw-bold mb-2 d-block">{{ $item->produk->nama ?? 'File Desain' }}</label>
+                                <div class="d-flex align-items-center">
+                                    <a href="{{ route('kasir.pesanan.file_desain', $item->id) }}" target="_blank"
+                                        class="btn btn-sm btn-outline-primary px-3">
+                                        <i class="bi bi-eye-fill me-1"></i> Lihat File
+                                    </a>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="ks-extra-item">
-                                        <label class="ks-label">Opsi Potong</label>
-                                        <span class="ks-chip"><i class="bi bi-scissors"></i>{{ $pesanan->opsi_potong ?? '-' }}</span>
-                                    </div>
-                                </div>
                             </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="ks-info-box">
-                                <label class="ks-label">Status Pembayaran</label>
-                                <div class="ks-value">Lunas</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="ks-info-box">
-                                <label class="ks-label">Total Pembayaran</label>
-                                <div class="ks-value">{{ $pesanan->total_harga_format }}</div>
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
 
-            @if($pesanan->status == 'pending')
-                <!-- Action Form -->
-                <div class="card border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-4">
-                        <h6 class="fw-bold mb-4 text-center" style="color: #9d005e;"><i class="bi bi-shield-check me-2"></i>Tindakan Kasir</h6>
-
-                        <div class="row g-3">
-                            <!-- Accept Button -->
-                            <div class="col-md-6">
-                                <button type="button" class="btn btn-success w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#terimaModal">
-                                    <i class="bi bi-check-circle me-1"></i> Terima Pesanan
-                                </button>
-                            </div>
-
-                            <!-- Reject Button -->
-                            <div class="col-md-6">
-                                <button type="button" class="btn btn-danger w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#tolakModal">
-                                    <i class="bi bi-x-circle me-1"></i> Tolak Pesanan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            @if($canCancel)
+                <div class="mt-4">
+                    <button type="button" class="btn btn-danger w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#batalPesananModal">
+                        <i class="bi bi-trash me-2"></i>Batalkan Pesanan
+                    </button>
                 </div>
+            @endif
 
-                <!-- Modal Terima Pesanan -->
-                <div class="modal fade" id="terimaModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
-                            <div class="modal-body p-4 text-center">
-                                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-                                    style="width: 58px; height: 58px; background: rgba(22, 163, 74, 0.12); color: #15803d;">
-                                    <i class="bi bi-check2-circle" style="font-size: 1.9rem;"></i>
-                                </div>
-                                <h5 class="fw-bold mb-2">Terima Pesanan?</h5>
-                                <p class="text-muted mb-0">
-                                    Pesanan <strong>{{ $pesanan->nomor_pesanan }}</strong> akan divalidasi dan masuk ke antrian produksi.
-                                </p>
-                            </div>
-                            <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3">
-                                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Batal</button>
-                                <form action="{{ route('kasir.pesanan.validasi', $pesanan->id) }}" method="POST" class="m-0">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success px-4 fw-bold">
-                                        <i class="bi bi-check-circle me-1"></i> Ya, Terima
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+            @if(!$isPaid && $isCashless && $snapToken)
+                <div class="alert alert-warning py-2 mt-3">
+                    <span class="small fw-bold">Status: Menunggu Pembayaran</span>
+                    <div class="small opacity-75">Klik tombol Bayar Sekarang pada bagian ringkasan pembayaran untuk melanjutkan.</div>
                 </div>
-
-                <!-- Modal Tolak Pesanan -->
-                <div class="modal fade" id="tolakModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
-                            <div class="modal-body p-4 text-center">
-                                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-                                    style="width: 58px; height: 58px; background: rgba(220, 38, 38, 0.12); color: #b91c1c;">
-                                    <i class="bi bi-x-circle" style="font-size: 1.9rem;"></i>
-                                </div>
-                                <h5 class="fw-bold mb-2">Tolak Pesanan?</h5>
-                                <p class="text-muted mb-0">
-                                    Pesanan <strong>{{ $pesanan->nomor_pesanan }}</strong> akan ditolak dan tidak masuk ke antrian produksi.
-                                </p>
-                            </div>
-                            <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3">
-                                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Batal</button>
-                                <form action="{{ route('kasir.pesanan.tolak', $pesanan->id) }}" method="POST" class="m-0">
-                                    @csrf
-                                    <button type="submit" class="btn btn-danger px-4 fw-bold">
-                                        <i class="bi bi-x-circle me-1"></i> Ya, Tolak
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+            @elseif($isPaid)
+                <div class="alert alert-success py-2 mt-3">
+                    <span class="small fw-bold">Status: Pembayaran Berhasil</span>
+                    <div class="small opacity-75">Pesanan siap diteruskan ke antrian produksi.</div>
                 </div>
             @else
-                @if($pesanan->status == 'dalam_antrian')
-                    <!-- Action Form for Dalam Antrian -->
-                    <div class="card border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-                        <div class="card-body p-4">
-                            <h6 class="fw-bold mb-4 text-center" style="color: #9d005e;"><i class="bi bi-shield-check me-2"></i>Tindakan Kasir</h6>
-
-                            <div class="row g-3">
-                                <!-- Cancel Button -->
-                                <div class="col-12">
-                                    <button type="button" class="btn btn-danger w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#batalkanModal">
-                                        <i class="bi bi-x-circle me-1"></i> Batalkan Pesanan
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Modal Batalkan Pesanan -->
-                    <div class="modal fade" id="batalkanModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
-                                <div class="modal-body p-4 text-center">
-                                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-                                        style="width: 58px; height: 58px; background: rgba(220, 38, 38, 0.12); color: #b91c1c;">
-                                        <i class="bi bi-x-circle" style="font-size: 1.9rem;"></i>
-                                    </div>
-                                    <h5 class="fw-bold mb-2">Batalkan Pesanan?</h5>
-                                    <p class="text-muted mb-0">
-                                        Pesanan <strong>{{ $pesanan->nomor_pesanan }}</strong> akan dibatalkan dan tidak dilanjutkan ke proses produksi.
-                                    </p>
-                                </div>
-                                <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3">
-                                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Kembali</button>
-                                    <form action="{{ route('kasir.pesanan.batalkan', $pesanan->id) }}" method="POST" class="m-0">
-                                        @csrf
-                                        <button type="submit" class="btn btn-danger px-4 fw-bold">
-                                            <i class="bi bi-x-circle me-1"></i> Ya, Batalkan
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="alert alert-{{ $pesanan->status_color }} py-2 mt-2">
-                        <span class="small fw-bold">Status: {{ $pesanan->status_label }}</span>
-                        @if($pesanan->dikonfirmasi_at)
-                            <div class="small opacity-75">Diverifikasi {{ $pesanan->dikonfirmasi_at->format('d/m/y H:i') }} oleh {{ $pesanan->kasir->name }}</div>
-                        @endif
-                    </div>
-                @endif
+                <div class="alert alert-warning py-2 mt-3">
+                    <span class="small fw-bold">Status: {{ $paymentStatusLabel }}</span>
+                    <div class="small opacity-75">Pesanan ini masih menunggu pembayaran pelanggan.</div>
+                </div>
             @endif
         </div>
     </div>
+@endsection
 
-    @if($pesanan->bukti_pembayaran != 'Pesanan Langsung')
-    <!-- Modal Bukti Transfer -->
-    <div class="modal fade" id="buktiModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-                <div class="modal-header bg-success text-white py-2">
-                    <h5 class="modal-title fw-bold small"><i class="bi bi-image me-2"></i>Bukti Transfer - {{ $pesanan->nomor_pesanan }}</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+@if((request()->boolean('show_feedback') && $isPaid) || request()->boolean('show_created'))
+    <div class="modal fade" id="kasirPaymentSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+                <div class="position-absolute top-0 end-0 p-3" style="z-index: 2;">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0 text-center bg-dark d-flex align-items-center justify-content-center" style="min-height: 400px;">
-                    <img src="{{ route('kasir.pesanan.bukti_pembayaran', $pesanan->id) }}" class="img-fluid" alt="Bukti Transfer Full">
+                <div class="modal-body p-4 text-center">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                        style="width: 58px; height: 58px; background: rgba(22, 163, 74, 0.12); color: #15803d;">
+                        <i class="bi bi-check-circle" style="font-size: 1.9rem;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">{{ request()->boolean('show_created') ? 'Pesanan Berhasil Dibuat' : 'Pembayaran Berhasil' }}</h5>
+                    <p class="text-muted mb-0">
+                        @if(request()->boolean('show_created'))
+                            Pesanan <strong>{{ $pesanan->nomor_pesanan }}</strong> berhasil dibuat dan siap diproses.
+                        @else
+                            Pembayaran pesanan <strong>{{ $pesanan->nomor_pesanan }}</strong> berhasil diproses.
+                        @endif
+                    </p>
                 </div>
-                <div class="modal-footer bg-light py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                    <a href="{{ route('kasir.pesanan.bukti_pembayaran', $pesanan->id) }}" target="_blank" class="btn btn-success btn-sm px-3">
-                        <i class="bi bi-box-arrow-up-right me-1"></i> Buka di Tab Baru
-                    </a>
+                <div class="modal-footer border-0 bg-light px-4 pb-4 pt-3 d-flex justify-content-center gap-2 flex-wrap">
+                    <a href="{{ route('kasir.dashboard') }}"
+                        class="btn px-4 text-white fw-bold d-inline-flex align-items-center justify-content-center"
+                        style="background-color: #9d005e; border-color: #9d005e; min-width: 190px;">Dashboard</a>
+                    <a href="{{ route('kasir.antrian') }}"
+                        class="btn btn-success px-4 fw-bold d-inline-flex align-items-center justify-content-center"
+                        style="min-width: 190px;">Lihat Antrian</a>
                 </div>
             </div>
         </div>
     </div>
-    @endif
-@endsection
+@endif
+
+@if(!$isPaid && $isCashless && $snapToken)
+    @push('scripts')
+        <script src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
+        <script type="text/javascript">
+            const kasirPayButton = document.getElementById('kasir-pay-button');
+            const kasirPaymentStatusUrl = "{{ route('kasir.pesanan.payment_status', $pesanan->id) }}";
+            let kasirPaymentPollingHandle = null;
+            let kasirCurrentMidtransOrderId = null;
+
+            async function checkKasirPaymentStatus() {
+                try {
+                    const url = kasirCurrentMidtransOrderId
+                        ? `${kasirPaymentStatusUrl}?order_id=${encodeURIComponent(kasirCurrentMidtransOrderId)}`
+                        : kasirPaymentStatusUrl;
+
+                    const response = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        cache: 'no-store'
+                    });
+
+                    if (!response.ok) return false;
+
+                    const data = await response.json();
+                    if (data.is_paid) {
+                        window.location.href = data.redirect_url;
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Gagal memeriksa status pembayaran kasir', error);
+                }
+
+                return false;
+            }
+
+            function startKasirPaymentPolling() {
+                if (kasirPaymentPollingHandle) return;
+
+                kasirPaymentPollingHandle = setInterval(async function () {
+                    const paid = await checkKasirPaymentStatus();
+                    if (paid) {
+                        clearInterval(kasirPaymentPollingHandle);
+                    }
+                }, 4000);
+            }
+
+            if (kasirPayButton) {
+                kasirPayButton.addEventListener('click', function () {
+                    window.snap.pay(kasirPayButton.dataset.token, {
+                        onSuccess: function (result) {
+                            kasirCurrentMidtransOrderId = result.order_id || kasirCurrentMidtransOrderId;
+                            checkKasirPaymentStatus();
+                            startKasirPaymentPolling();
+                        },
+                        onPending: function (result) {
+                            kasirCurrentMidtransOrderId = result.order_id || kasirCurrentMidtransOrderId;
+                            startKasirPaymentPolling();
+                        },
+                        onError: function () {
+                            alert('Pembayaran gagal!');
+                        },
+                        onClose: function () {
+                            startKasirPaymentPolling();
+                        }
+                    });
+                });
+
+                startKasirPaymentPolling();
+            }
+        </script>
+    @endpush
+@endif
+
+@if((request()->boolean('show_feedback') && $isPaid) || request()->boolean('show_created'))
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modalEl = document.getElementById('kasirPaymentSuccessModal');
+                if (!modalEl || typeof bootstrap === 'undefined') return;
+
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+
+                const currentUrl = new URL(window.location.href);
+                if (currentUrl.searchParams.has('show_feedback')) {
+                    currentUrl.searchParams.delete('show_feedback');
+                }
+                if (currentUrl.searchParams.has('show_created')) {
+                    currentUrl.searchParams.delete('show_created');
+                }
+                const nextUrl = currentUrl.pathname
+                    + (currentUrl.search ? currentUrl.search : '')
+                    + currentUrl.hash;
+                window.history.replaceState({}, document.title, nextUrl);
+            });
+        </script>
+    @endpush
+@endif

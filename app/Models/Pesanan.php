@@ -28,6 +28,8 @@ class Pesanan extends Model
         'finishing',
         'opsi_potong',
         'status',
+        'snap_token',
+        'pembayaran_status',
         'alasan_penolakan',
         'dikonfirmasi_oleh',
         'dikonfirmasi_at',
@@ -48,7 +50,7 @@ class Pesanan extends Model
      * Status labels for display
      */
     const STATUS_LABELS = [
-        'pending' => 'Menunggu Verifikasi',
+        'pending' => 'Menunggu Pembayaran',
         'ditolak' => 'Ditolak',
         'dibatalkan' => 'Dibatalkan',
         'dalam_antrian' => 'Dalam Antrian',
@@ -185,7 +187,8 @@ class Pesanan extends Model
     {
         return $query->where('status', 'dalam_antrian')
             ->orderBy('estimasi_waktu', 'asc')
-            ->orderBy('dikonfirmasi_at', 'asc');
+            ->orderBy('dikonfirmasi_at', 'asc')
+            ->orderBy('id', 'asc');
     }
 
     /**

@@ -14,31 +14,72 @@
             border-bottom: 5px solid var(--secondary-color);
         }
 
+        .brand-container {
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
         .hero-title {
-            font-size: 2.5rem;
-            font-weight: 800;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.1;
             margin-bottom: 1.5rem;
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .brand-sub {
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        @media (max-width: 991px) {
+            .hero-title {
+                font-size: 2.5rem;
+                justify-content: center;
+                text-align: center;
+            }
         }
 
         .hero-subtitle {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             opacity: 0.9;
-            margin-bottom: 2.5rem;
             line-height: 1.6;
         }
 
         @media (max-width: 991px) {
             .hero-section {
-                padding: 4rem 0 3rem;
-                text-align: center;
+                padding: 3rem 0;
+                text-align: left !important; /* Paksa rata kiri */
             }
             .hero-title {
-                font-size: 2.2rem;
+                font-family: 'Montserrat', sans-serif !important;
+                font-size: 2.2rem !important; /* Ukuran lebih kecil */
+                font-weight: 800 !important;
+                line-height: 1.2 !important;
+                letter-spacing: 0 !important;
+                display: flex !important; /* Kembali ke flex agar sejajar ke samping */
+                justify-content: flex-start !important; /* Paksa rata kiri untuk kontainer flex */
+                flex-wrap: wrap;
+                gap: 10px;
+                text-align: left !important;
+                margin-bottom: 1rem !important;
+            }
+            .brand-sub {
+                display: inline-block !important;
+                text-align: left !important;
+                font-size: 2.2rem !important; /* Ukuran sama dengan Artpedia */
+                margin-top: 0 !important;
             }
             .hero-subtitle {
-                font-size: 1rem;
-                margin: 0 auto 2rem;
+                font-size: 1.1rem !important;
+                text-align: left !important;
+                margin-left: 0 !important;
             }
             .hero-features-row {
                 justify-content: center;
@@ -58,10 +99,11 @@
         .feature-card {
             border: none;
             border-radius: 20px;
-            padding: 2.5rem 1.5rem;
+            padding: 2.25rem 1.5rem !important;
             transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
             background: #ffffff;
             box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            text-align: center !important;
         }
 
         .feature-card:hover {
@@ -70,14 +112,25 @@
         }
 
         .feature-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 18px;
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
-            font-size: 1.8rem;
+            margin: 0 auto 1.2rem !important;
+            font-size: 1.25rem;
+            padding: 6px;
+        }
+
+        .feature-icon i, .feature-icon-inner {
+            font-size: 1.45rem;
+            line-height: 1;
+        }
+
+        .feature-card h5 {
+            margin-top: 0.75rem !important;
+            margin-bottom: 0.5rem !important;
         }
 
         .cta-section {
@@ -181,6 +234,37 @@
             margin-bottom: 1.5rem;
         }
 
+        .products-heading {
+            gap: 1rem;
+        }
+
+        .product-card {
+            border-radius: 12px;
+            overflow: hidden;
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
+
+        .product-card .card-img-top {
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .product-card .card-title,
+        .product-card .card-text,
+        .product-card .btn,
+        .product-card .text-primary {
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
+
+        @media (max-width: 575px) {
+            .products-heading {
+                align-items: flex-start !important;
+                flex-direction: column;
+            }
+        }
+
     </style>
 
     <!-- Hero Section -->
@@ -189,13 +273,47 @@
             <div class="row align-items-center">
                 <div class="col-lg-7">
                     <h1 class="hero-title">
-                        <i class="bi bi-printer-fill me-3"></i>
-                        Artpedia Printshop
+                        <span>Artpedia</span>
+                        <span class="brand-sub">Printshop</span>
                     </h1>
-                    <p class="hero-subtitle">
-                        Kami membantu mewujudkan kebutuhan cetak Anda dengan kualitas bagus, hasil terbaik, dan profesional.
-                    </p>
-                    <div class="d-flex gap-3 flex-wrap justify-content-center justify-content-lg-start">
+                    <div class="hero-subtitle mb-3">
+                        <p class="mb-1">Kami membantu mewujudkan kebutuhan cetak Anda dengan kualitas bagus, hasil terbaik, dan profesional.</p>
+                        <p class="mb-0">Konsultasikan semua kebutuhan dan spesifikasi cetak Anda.</p>
+                    </div>
+                    <p class="hero-subtitle mb-2">Kami menyediakan :</p>
+                    <div class="row g-2 mb-4 hero-service-list hero-subtitle">
+                        <div class="col-6 col-md-5">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-square-fill me-2" style="font-size: 0.35rem; color: #ffc107;"></i> Stiker
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-5">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-square-fill me-2" style="font-size: 0.35rem; color: #ffc107;"></i> Poster
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-5">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-square-fill me-2" style="font-size: 0.35rem; color: #ffc107;"></i> Kartu Nama
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-5">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-square-fill me-2" style="font-size: 0.35rem; color: #ffc107;"></i> Kartu Ucapan
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-5">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-square-fill me-2" style="font-size: 0.35rem; color: #ffc107;"></i> Sertifikat
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-5">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-square-fill me-2" style="font-size: 0.35rem; color: #ffc107;"></i> Dll
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 flex-wrap justify-content-start">
                         <a href="{{ route('katalog') }}" class="btn btn-light px-4 py-2 shadow-sm border-0">
                             <i class="bi bi-grid me-2"></i> Lihat Katalog
                         </a>
@@ -220,35 +338,7 @@
                         @endguest
                     </div>
 
-                    <div class="d-flex gap-4 mt-5 pt-4 hero-features-row">
-                        <div class="d-flex align-items-center text-white hero-feature-item">
-                            <div class="bg-white bg-opacity-10 p-2 p-md-3 rounded-circle me-3">
-                                <i class="bi bi-lightning-charge-fill fs-5 fs-md-4 text-warning"></i>
-                            </div>
-                            <div class="lh-1">
-                                <div class="fw-bold hero-feature-title mb-1">Proses Cepat</div>
-                                <div class="opacity-75 hero-feature-subtitle">1-3 Hari Jadi</div>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center text-white hero-feature-item">
-                            <div class="bg-white bg-opacity-10 p-2 p-md-3 rounded-circle me-3">
-                                <i class="bi bi-award-fill fs-5 fs-md-4 text-warning"></i>
-                            </div>
-                            <div class="lh-1">
-                                <div class="fw-bold hero-feature-title mb-1">Premium</div>
-                                <div class="opacity-75 hero-feature-subtitle">Bahan berkualitas</div>
-                            </div>
-                        </div>
-                         <div class="d-flex align-items-center text-white hero-feature-item d-none d-sm-flex">
-                            <div class="bg-white bg-opacity-10 p-2 p-md-3 rounded-circle me-3">
-                                <i class="bi bi-wallet2 fs-5 fs-md-4 text-warning"></i>
-                            </div>
-                            <div class="lh-1">
-                                <div class="fw-bold hero-feature-title mb-1">Terjangkau</div>
-                                <div class="opacity-75 hero-feature-subtitle">Mulai Rp 4k</div>
-                            </div>
-                        </div>
-                    </div>
+
 
                 </div>
                 <div class="col-lg-5 text-center mt-5 mt-lg-0 position-relative d-flex align-items-center justify-content-center" style="min-height: 350px;">
@@ -270,39 +360,37 @@
     </section>
 
     <!-- Features -->
-    <section class="container mb-5">
-        <div class="text-center mb-5">
+    <section class="container py-4">
+        <div class="text-center mb-4 pb-lg-2">
             <h2 class="fw-bold section-title">Mengapa Memilih Kami?</h2>
             <p class="text-muted">Layanan percetakan digital terbaik untuk kebutuhan Anda</p>
         </div>
 
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="feature-card card h-100">
+                <div class="feature-card card h-100 text-center">
                     <div class="feature-icon bg-primary bg-opacity-10 text-primary">
-                        <i class="bi bi-lightning-charge-fill"></i>
+                        <i class="bi bi-lightning-charge-fill feature-icon-inner"></i>
                     </div>
-                    <h5 class="fw-bold">Proses Cepat</h5>
-                    <p class="text-muted mb-0">Proses pengerjaan cepat dengan sistem antrian prioritas yang cerdas
-                    </p>
+                    <h5 class="fw-bold mt-3">Proses Cepat</h5>
+                    <p class="text-muted mb-0">Proses pengerjaan cepat dengan sistem antrian prioritas yang cerdas</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card card h-100">
+                <div class="feature-card card h-100 text-center">
                     <div class="feature-icon bg-success bg-opacity-10 text-success">
-                        <i class="bi bi-patch-check-fill"></i>
+                        <i class="bi bi-patch-check-fill feature-icon-inner"></i>
                     </div>
-                    <h5 class="fw-bold">Kualitas Terjamin</h5>
-                    <p class="text-muted mb-0">Menggunakan mesin cetak berkualitas tinggi dengan hasil yang tajam dan
-                        presisi</p>
+                    <h5 class="fw-bold mt-3">Kualitas Terjamin</h5>
+                    <p class="text-muted mb-0">Menggunakan mesin cetak berkualitas tinggi dengan hasil yang tajam dan presisi</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card card h-100">
+                <div class="feature-card card h-100 text-center">
                     <div class="feature-icon bg-warning bg-opacity-10 text-warning">
-                        <i class="bi bi-geo-alt-fill"></i>
+                        <i class="bi bi-geo-alt-fill feature-icon-inner"></i>
                     </div>
-                    <h5 class="fw-bold">Tracking Real-time</h5>
+                    <h5 class="fw-bold mt-3">Tracking Real-time</h5>
                     <p class="text-muted mb-0">Pantau status pesanan Anda secara real-time dari mana saja</p>
                 </div>
             </div>
@@ -311,7 +399,7 @@
 
     <!-- Categories -->
     @if(isset($kategoris) && $kategoris->count() > 0)
-        <section class="container mb-5">
+        <section class="container py-4">
             <div class="text-center mb-4">
                 <h2 class="fw-bold section-title">Kategori Produk</h2>
                 <p class="text-muted">Berbagai jenis layanan cetak yang kami sediakan</p>
@@ -335,8 +423,8 @@
 
     <!-- Latest Products -->
     @if(isset($produkTerbaru) && $produkTerbaru->count() > 0)
-        <section class="container mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+        <section class="container products-section py-4">
+            <div class="products-heading d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold mb-1 section-title">Produk Terbaru</h2>
                     <p class="text-muted mb-0">Lihat layanan cetak terbaru kami</p>
@@ -348,26 +436,22 @@
 
             <div class="row g-4">
                 @foreach($produkTerbaru as $produk)
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card product-card h-100">
-                            @if($produk->gambar)
-                                <img src="{{ asset('storage/' . $produk->gambar) }}" alt="{{ $produk->nama }}">
-                            @else
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                    <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
-                                </div>
-                            @endif
-                            <div class="card-body p-3">
-                                <h6 class="fw-bold mb-2">{{ $produk->nama }}</h6>
-                                <p class="text-muted small mb-3" style="font-size: 0.85rem;">{{ Str::limit($produk->deskripsi, 80) }}</p>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fw-bold text-primary small">{{ $produk->harga_format }}</span>
-                                    <a href="{{ route('katalog.show', $produk->slug) }}" class="btn btn-sm btn-primary py-1 px-3" style="font-size: 0.8rem;">
-                                        Detail
-                                    </a>
+                    <div class="col-sm-6 col-lg-4">
+                        <a href="{{ route('katalog.show', $produk->slug) }}" class="text-decoration-none text-dark d-block h-100">
+                            <div class="card product-card h-100 shadow-sm border-0 position-relative">
+                                <img src="{{ $produk->gambar_url }}" class="card-img-top" alt="{{ $produk->nama }}">
+                                <div class="card-body d-flex flex-column p-3">
+                                    <h6 class="card-title fw-bold mb-2">{{ $produk->nama }}</h6>
+                                    <p class="card-text text-muted flex-grow-1 mb-2" style="font-size: 0.95rem; line-height: 1.45;">{{ Str::limit($produk->deskripsi, 60) }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <span class="fw-bold text-primary">{{ $produk->harga_format }}</span>
+                                        <span class="btn btn-primary py-1 px-3" style="font-size: 0.9rem;">
+                                            <i class="bi bi-eye"></i> Detail
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 @endforeach
             </div>
@@ -402,8 +486,8 @@
     </section>
 
     <!-- Contact Section -->
-    <section class="container mb-5 mt-5">
-        <div class="text-center mb-5">
+    <section class="container py-4">
+        <div class="text-center mb-4">
             <h2 class="fw-bold section-title">Hubungi Kami</h2>
             <p class="text-muted">Punya pertanyaan? Kami siap melayani Anda</p>
         </div>
@@ -425,7 +509,7 @@
                     </div>
                     <h5 class="fw-bold">Kontak</h5>
                     <p class="text-muted mb-0">Hubungi kami via WhatsApp untuk respon lebih cepat:<br>
-                        <a href="https://wa.me/6282130003595" target="_blank" class="text-decoration-none fw-bold text-success">
+                        <a href="http://10.20.107.92:8000" target="_blank" class="text-decoration-none fw-bold text-success">
                             +62 821-3000-3595
                         </a>
                     </p>

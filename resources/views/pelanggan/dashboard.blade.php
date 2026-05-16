@@ -157,7 +157,7 @@
                         </div>
                         <div class="order-card-body">
                             <p><span>Produk:</span> <strong class="text-dark">{{ $pesanan->produk->nama ?? '-' }}</strong></p>
-                            <p><span>Jumlah:</span> <strong>{{ $pesanan->jumlah }} lembar</strong></p>
+                            <p><span>Jumlah:</span> <strong>{{ $pesanan->jumlah }} {{ $pesanan->produk->unit_label ?? 'lembar' }}</strong></p>
                             <p><span>Tanggal:</span> <span class="text-muted small">{{ $pesanan->created_at->format('d M Y') }}</span></p>
                             <a href="{{ route('pelanggan.pesanan.show', $pesanan->id) }}" class="btn btn-primary btn-sm w-100 mt-2">
                                 Detail Pesanan
@@ -187,7 +187,7 @@
                                     <tr>
                                         <td><code>{{ $pesanan->nomor_pesanan }}</code></td>
                                         <td>{{ $pesanan->produk->nama ?? '-' }}</td>
-                                        <td>{{ $pesanan->jumlah }} lembar</td>
+                                        <td>{{ $pesanan->jumlah }} {{ $pesanan->produk->unit_label ?? 'lembar' }}</td>
                                         <td>
                                             <span class="badge badge-{{ $pesanan->status }}">
                                                 {{ $pesanan->status_label }}

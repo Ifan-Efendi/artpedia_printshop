@@ -355,23 +355,27 @@
 @push('scripts')
 <script>
     const produkOptions = @json($produkOptions);
+    const produkMap = Object.fromEntries(produkOptions.map(produk => [String(produk.id), produk]));
     const kategoriSelect = document.getElementById('kategori_id');
     const produkSelect = document.getElementById('produk_id');
+    const jumlahInput = document.getElementById('jumlah');
+    const minOrderText = document.getElementById('min-order-text');
+    const finishingGroup = document.getElementById('finishing-group');
+    const cuttingGroup = document.getElementById('cutting-group');
     
     kategoriSelect.addEventListener('change', function() {
         fillProdukByKategori(this.value);
     });
 
     document.getElementById('produk_id').addEventListener('change', function() {
-        const selected = this.options[this.selectedIndex];
-        const slug = selected ? selected.dataset.slug : '';
+        const produk = produkMap[String(this.value)] || null;
         const section = document.getElementById('options-section');
         const rightSection = document.getElementById('options-right');
         
-        if(this.value && slug) {
+        if (produk) {
             section.style.display = 'block';
             rightSection.style.display = 'block';
-            updateOptions(slug);
+            updateOptions(produk);
             calculateTotal();
         } else {
             section.style.display = 'none';
@@ -395,46 +399,80 @@
                 `${produk.nama} - Rp ${Number(produk.harga_satuan).toLocaleString('id-ID')}`,
                 produk.id
             );
-            option.dataset.slug = produk.slug;
-            option.dataset.harga = produk.harga_satuan;
             produkSelect.add(option);
         });
 
         produkSelect.disabled = filtered.length === 0;
     }
 
-    function updateOptions(slug) {
-        const cGroup = document.getElementById('cutting-group');
+    function updateOptions(produk) {
+        const minOrder = Math.max(parseInt(produk.min_order || 1, 10), 1);
+        const unitLabel = produk.unit_label || 'lembar';
 
-        // Toggle Cutting
-        if(slug.includes('sticker')) {
-            cGroup.style.display = 'block';
-        } else {
-            cGroup.style.display = 'none';
-            // Uncheck cutting options
-            document.querySelectorAll('.cutting-opt').forEach(el => el.checked = false);
+        jumlahInput.min = minOrder;
+        if (parseInt(jumlahInput.value || 0, 10) < minOrder) {
+            jumlahInput.value = minOrder;
+        }
+
+        if (minOrderText) {
+            minOrderText.innerText = `Min. Order: ${minOrder} ${unitLabel}`;
+        }
+
+        if (finishingGroup) {
+            finishingGroup.style.display = produk.is_finishing ? 'block' : 'none';
+            if (!produk.is_finishing) {
+                const noneOption = document.getElementById('finishing_none');
+                if (noneOption) {
+                    noneOption.checked = true;
+                }
+            }
+        }
+
+        if (cuttingGroup) {
+            cuttingGroup.style.display = produk.is_cutting ? 'block' : 'none';
+            if (!produk.is_cutting) {
+                document.querySelectorAll('.cutting-opt').forEach(el => el.checked = false);
+            }
         }
     }
 
-    function calculateTotal() {
-        const produkOpt = document.getElementById('produk_id').options[document.getElementById('produk_id').selectedIndex];
-        const hargaBase = parseFloat(produkOpt.dataset.harga || 0);
-        const qty = parseFloat(document.getElementById('jumlah').value || 0);
-        
-        let additional = 0;
-        
-        // Finishing
+    async function calculateTotal() {
+        const produkId = document.getElementById('produk_id').value;
+        if (!produkId) return;
+
+        const produk = produkMap[String(produkId)] || null;
+        if (!produk) return;
+
+        const qty = Math.max(parseInt(document.getElementById('jumlah').value || 1, 10), parseInt(produk.min_order || 1, 10));
+        if (parseInt(document.getElementById('jumlah').value || 0, 10) !== qty) {
+            document.getElementById('jumlah').value = qty;
+        }
         const fin = document.querySelector('input[name="finishing"]:checked');
-        if(fin && fin.value) additional += parseFloat(fin.dataset.harga || 0);
-
-        // Cutting
         const cut = document.querySelector('input[name="opsi_potong"]:checked');
-        if(cut && cut.value) additional += parseFloat(cut.dataset.harga || 0);
 
-        const total = (hargaBase + additional) * qty;
+        try {
+            const response = await fetch("{{ route('pelanggan.hitung-harga') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    produk_id: produkId,
+                    jumlah: qty,
+                    finishing: produk.is_finishing && fin && fin.value ? fin.value : null,
+                    opsi_potong: produk.is_cutting && cut && cut.value ? cut.value : null,
+                }),
+            });
 
-        document.getElementById('total_price').innerText = 'Rp ' + total.toLocaleString('id-ID');
-        
+            if (!response.ok) return;
+
+            const data = await response.json();
+            document.getElementById('total_price').innerText = data.total_harga_format;
+        } catch (error) {
+            console.error('Gagal menghitung harga', error);
+        }
     }
 
     document.getElementById('jumlah').addEventListener('input', calculateTotal);

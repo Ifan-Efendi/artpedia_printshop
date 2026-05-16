@@ -11,7 +11,7 @@
                             <th>Operator</th>
                             <th>No. Pesanan</th>
                             <th>Produk</th>
-                            <th>Mulai Sejak</th>
+                            <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -29,15 +29,17 @@
                                 </td>
                                 <td><code>{{ $proses->nomor_pesanan }}</code></td>
                                 <td>{{ $proses->produk->nama }}</td>
-                                <td>{{ $proses->mulai_produksi_at->diffForHumans() }}</td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
+                                    <span class="badge bg-primary">Sedang Dikerjakan</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2 flex-wrap">
                                         <a href="{{ route('produksi.show', $proses->id) }}"
-                                            class="btn btn-outline-primary">Detail</a>
+                                            class="btn btn-sm btn-outline-primary queue-action-btn">Detail</a>
                                         @if($proses->diproses_oleh == auth()->id())
-                                            <form action="{{ route('produksi.selesai', $proses->id) }}" method="POST">
+                                            <form action="{{ route('produksi.selesai', $proses->id) }}" method="POST" class="m-0">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success ms-1">Selesai</button>
+                                                <button type="submit" class="btn btn-sm btn-success queue-action-btn">Selesai</button>
                                             </form>
                                         @endif
                                     </div>
@@ -70,10 +72,15 @@
                     </thead>
                     <tbody>
                         @foreach($antrian as $key => $antri)
+                            @php
+                                $operatorHasActiveJob = $sedangDiproses->where('diproses_oleh', auth()->id())->count() > 0;
+                                $isFirstQueueItem = $antrian->currentPage() === 1 && $key === 0;
+                                $canStart = $isFirstQueueItem && !$operatorHasActiveJob;
+                            @endphp
                             <tr class="{{ $key == 0 ? 'table-warning' : '' }}">
                                 <td class="text-center">
                                     @if($key == 0)
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-star-fill"></i> TERPENDEK</span>
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-star-fill"></i> URUTAN 1</span>
                                     @else
                                         {{ $antrian->firstItem() + $key }}
                                     @endif
@@ -86,12 +93,12 @@
                                 </td>
                                 <td class="fw-bold">{{ $antri->jumlah }}</td>
                                 <td>
-                                    <div class="btn-group">
+                                    <div class="d-flex gap-2 flex-wrap">
                                         <a href="{{ route('produksi.show', $antri->id) }}"
-                                            class="btn btn-sm btn-outline-primary">Detail</a>
-                                        <form action="{{ route('produksi.mulai', $antri->id) }}" method="POST">
+                                            class="btn btn-sm btn-outline-primary queue-action-btn">Detail</a>
+                                        <form action="{{ route('produksi.mulai', $antri->id) }}" method="POST" class="m-0">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-success ms-1" {{ $sedangDiproses->where('diproses_oleh', auth()->id())->count() > 0 ? 'disabled' : '' }}>
+                                            <button type="submit" class="btn btn-sm btn-success queue-action-btn" {{ $canStart ? '' : 'disabled' }}>
                                                 Kerjakan
                                             </button>
                                         </form>

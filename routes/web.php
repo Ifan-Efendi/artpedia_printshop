@@ -12,6 +12,7 @@ use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProduksiController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\AccountSettingsController;
+use App\Http\Controllers\PaymentCallbackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +23,45 @@ use App\Http\Controllers\AccountSettingsController;
 |
 */
 
+Route::get('/test-midtrans', function () {
+    $serverKey = config('midtrans.server_key');
+    $isProd = config('midtrans.is_production');
+    
+    $authString = base64_encode($serverKey . ':');
+    $url = $isProd ? 'https://app.midtrans.com/snap/v1/transactions' : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+    
+    $payload = [
+        'transaction_details' => [
+            'order_id' => 'TEST-' . time(),
+            'gross_amount' => 10000
+        ]
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Accept: application/json',
+        'Authorization: Basic ' . $authString
+    ]);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    return response()->json([
+        'PENGATURAN_YANG_TERBACA_OLEH_SISTEM' => [
+            'Merchant_ID' => config('midtrans.merchant_id'),
+            'Server_Key' => $serverKey ? substr($serverKey, 0, 11) . '...' : null,
+            'Mode_Production' => $isProd ? 'YA (Asli)' : 'TIDAK (Sandbox)'
+        ],
+        'HASIL_DARI_SERVER_MIDTRANS' => [
+            'Kode_Status' => $httpCode,
+            'Balasan' => json_decode($response)
+        ]
+    ]);
+});
 // ============ PUBLIC ROUTES ============
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/katalog', [LandingController::class, 'katalog'])->name('katalog');
@@ -32,6 +72,7 @@ Auth::routes();
 
 // Home - Redirect based on role
 Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/payment/finish', [PaymentCallbackController::class, 'finishRedirect'])->name('payment.finish');
 
 // Account Settings
 Route::middleware('auth')->group(function () {
@@ -49,6 +90,7 @@ Route::middleware(['auth', 'role:pelanggan'])->prefix('pelanggan')->name('pelang
     Route::get('/pesanan/create', [PesananController::class, 'create'])->name('pesanan.create');
     Route::post('/pesanan', [PesananController::class, 'store'])->name('pesanan.store');
     Route::get('/pesanan/{id}', [PesananController::class, 'show'])->name('pesanan.show');
+    Route::get('/pesanan/{id}/payment-status', [PesananController::class, 'paymentStatus'])->name('pesanan.payment_status');
     Route::get('/pesanan/{id}/file-desain', [PesananController::class, 'viewFileDesain'])->name('pesanan.file_desain');
     Route::get('/pesanan/{id}/bukti-pembayaran', [PesananController::class, 'viewBuktiPembayaran'])->name('pesanan.bukti_pembayaran');
     Route::delete('/pesanan/{id}', [PesananController::class, 'destroy'])->name('pesanan.destroy');
@@ -60,6 +102,7 @@ Route::middleware(['auth', 'role:pelanggan'])->prefix('pelanggan')->name('pelang
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::delete('/cart/{id}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [CartController::class, 'processCheckout'])->name('checkout.process');
 });
@@ -75,10 +118,12 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->grou
     Route::post('/pesanan/buat/item', [KasirController::class, 'addItem'])->name('pesanan.item.add');
     Route::delete('/pesanan/buat/item/{id}', [KasirController::class, 'removeItem'])->name('pesanan.item.remove');
     Route::delete('/pesanan/buat/item', [KasirController::class, 'clearItems'])->name('pesanan.item.clear');
+    Route::post('/hitung-harga', [KasirController::class, 'hitungHarga'])->name('hitung-harga');
     Route::get('/cart', [KasirController::class, 'cart'])->name('cart.index');
     Route::get('/checkout', [KasirController::class, 'checkout'])->name('checkout');
     Route::post('/pesanan/buat', [KasirController::class, 'store'])->name('pesanan.store');
     Route::get('/pesanan/{id}', [KasirController::class, 'show'])->name('pesanan.show');
+    Route::get('/pesanan/{id}/payment-status', [KasirController::class, 'paymentStatus'])->name('pesanan.payment_status');
     Route::get('/pesanan/{id}/file-desain', [KasirController::class, 'viewFileDesain'])->name('pesanan.file_desain');
     Route::get('/pesanan/{id}/bukti-pembayaran', [KasirController::class, 'viewBuktiPembayaran'])->name('pesanan.bukti_pembayaran');
     Route::post('/pesanan/{id}/validasi', [KasirController::class, 'validasi'])->name('pesanan.validasi');
@@ -112,6 +157,7 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->grou
 // ============ OPERATOR PRODUKSI ROUTES ============
 Route::middleware(['auth', 'role:operator_produksi'])->prefix('produksi')->name('produksi.')->group(function () {
     Route::get('/dashboard', [ProduksiController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard/realtime/content', [ProduksiController::class, 'realtimeDashboard'])->name('dashboard.realtime');
 
     // Antrian (SJF)
     Route::get('/antrian', [ProduksiController::class, 'antrian'])->name('antrian');

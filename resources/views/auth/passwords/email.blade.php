@@ -50,8 +50,8 @@
 <div class="auth-wrap">
     <div class="card auth-card shadow-sm">
         <div class="card-body">
-            <h1 class="auth-title">Lupa Password</h1>
-            <p class="auth-subtitle">Masukkan email akun Anda untuk menerima tautan reset password.</p>
+            <h1 class="auth-title text-center">Lupa Password</h1>
+            <p class="auth-subtitle text-center">Masukkan email akun Anda untuk menerima tautan reset password.</p>
 
             @if (session('status'))
                 <div class="alert alert-success" role="alert">
@@ -75,7 +75,7 @@
 
                 <div class="d-grid mb-3">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        Kirim Link Reset
+                        Kirim
                     </button>
                 </div>
 

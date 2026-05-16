@@ -42,6 +42,13 @@
         color: #9d005e;
         font-size: 1.25rem;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .cart-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .cart-meta {
@@ -69,15 +76,10 @@
         font-weight: 700;
     }
 
-    .qty-box {
-        min-width: 44px;
-        height: 34px;
-        border: 1px solid #9ca3af;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    .cart-qty-value {
+        font-size: 1rem;
         font-weight: 600;
-        background: #fff;
+        color: #1f2937;
     }
 
     .btn-remove-circle {
@@ -150,17 +152,30 @@
                         </thead>
                         <tbody>
                             @foreach($cart as $item)
+                                @php
+                                    $finishing = $item['finishing'] ?? null;
+                                    $hasFinishing = !empty($finishing) && strtolower(trim($finishing)) !== 'tidak pakai';
+                                    $cutting = $item['opsi_potong'] ?? null;
+                                    $hasCutting = in_array($cutting, ['Kiss Cut', 'Die Cut'], true);
+                                @endphp
                                 <tr>
                                     <td>
                                         <div class="cart-product-wrap">
                                             <div class="cart-thumb">
-                                                <i class="bi bi-file-earmark-text"></i>
+                                                @if(!empty($item['gambar']))
+                                                    <img src="{{ asset('storage/' . $item['gambar']) }}" alt="{{ $item['produk_nama'] }}">
+                                                @else
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                @endif
                                             </div>
                                             <div>
                                                 <strong class="d-block mb-1 cart-product-title">{{ $item['produk_nama'] }}</strong>
-                                                <span class="cart-meta d-block">{{ $item['ukuran_nama'] }} | {{ $item['jenis_nama'] }}</span>
-                                                <span class="cart-meta d-block">Finishing: {{ $item['finishing'] ?? 'Tidak Pakai' }}</span>
-                                                <span class="cart-meta d-block">Potong: {{ $item['opsi_potong'] ?? 'Potong Kotak' }}</span>
+                                                @if($hasFinishing)
+                                                    <span class="cart-meta d-block">Finishing: {{ $finishing }}</span>
+                                                @endif
+                                                @if($hasCutting)
+                                                    <span class="cart-meta d-block">Potong: {{ $cutting }}</span>
+                                                @endif
                                                 @if(!empty($item['catatan']))
                                                     <span class="cart-meta d-block">Catatan: {{ $item['catatan'] }}</span>
                                                 @endif
@@ -169,7 +184,7 @@
                                     </td>
                                     <td class="text-center cart-price">Rp. {{ number_format($item['harga_satuan'], 0, ',', '.') }}</td>
                                     <td class="text-center cart-qty">
-                                        <span class="qty-box">{{ $item['jumlah'] }}</span>
+                                        <span class="cart-qty-value">{{ $item['jumlah'] }}</span>
                                     </td>
                                     <td class="text-center cart-total">Rp. {{ number_format($item['total_harga'], 0, ',', '.') }}</td>
                                     <td class="text-center">
@@ -194,15 +209,25 @@
                     </table>
                 </div>
                 <div class="cart-footer">
-                    <div>
+                    <div class="d-flex gap-2 flex-wrap">
                         <a href="{{ route('pelanggan.pesanan.create') }}" class="btn btn-outline-primary px-4">
-                            <i class="bi bi-chevron-left me-1"></i> Lanjutkan Order
+                            <i class="bi bi-chevron-left me-1"></i> Tambah Pesanan
                         </a>
+                        <form action="{{ route('pelanggan.cart.clear') }}" method="POST" onsubmit="return confirm('Kosongkan semua item keranjang?')">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-outline-danger px-4" type="submit">
+                                <i class="bi bi-trash3 me-1"></i> Kosongkan
+                            </button>
+                        </form>
                     </div>
                     <div>
-                        <a href="{{ route('pelanggan.checkout') }}" class="btn btn-success px-4">
-                            Checkout <i class="bi bi-chevron-right ms-1"></i>
-                        </a>
+                        <form action="{{ route('pelanggan.checkout.process') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-success px-4">
+                                Checkout <i class="bi bi-chevron-right ms-1"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             @else

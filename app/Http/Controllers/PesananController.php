@@ -9,9 +9,19 @@ use App\Models\UkuranKertas;
 use App\Models\JenisKertas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\MidtransService;
+use App\Services\PricingService;
 
 class PesananController extends Controller
 {
+    protected $midtransService;
+    protected $pricingService;
+
+    public function __construct(MidtransService $midtransService, PricingService $pricingService)
+    {
+        $this->midtransService = $midtransService;
+        $this->pricingService = $pricingService;
+    }
     /**
      * Display list of customer's orders
      */
@@ -38,6 +48,10 @@ class PesananController extends Controller
                 'slug' => $produk->slug,
                 'harga_satuan' => $produk->harga_satuan,
                 'kategori_id' => $produk->kategori_id,
+                'min_order' => $produk->min_order,
+                'is_finishing' => (bool) $produk->is_finishing,
+                'is_cutting' => (bool) $produk->is_cutting,
+                'unit_label' => $produk->unit_label,
             ];
         })->values();
         $kategoris = KategoriProduk::aktif()->orderBy('nama')->get();
@@ -56,39 +70,46 @@ class PesananController extends Controller
      */
     public function store(Request $request)
     {
-        // Get first available paper size and type as default
-        $defaultUkuran = UkuranKertas::first()->id ?? null;
-        $defaultJenis = JenisKertas::first()->id ?? null;
-
-        // Merge defaults if not present in request
-        $request->merge([
-            'ukuran_kertas_id' => $request->ukuran_kertas_id ?? $defaultUkuran,
-            'jenis_kertas_id' => $request->jenis_kertas_id ?? $defaultJenis,
-        ]);
-
         $request->validate([
             'produk_id' => 'required|exists:produk,id',
-            'ukuran_kertas_id' => 'required|exists:ukuran_kertas,id',
-            'jenis_kertas_id' => 'required|exists:jenis_kertas,id',
+            'ukuran_kertas_id' => 'nullable|exists:ukuran_kertas,id',
+            'jenis_kertas_id' => 'nullable|exists:jenis_kertas,id',
             'jumlah' => 'required|integer|min:1',
             'file_desain' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'bukti_pembayaran' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+            'bukti_pembayaran' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
             'catatan' => 'nullable|string|max:1000',
-            'finishing' => 'nullable|array',
+            'finishing' => 'nullable',
             'opsi_potong' => 'nullable|string',
         ]);
 
         $produk = Produk::findOrFail($request->produk_id);
-        $ukuran = UkuranKertas::findOrFail($request->ukuran_kertas_id);
-        $jenis = JenisKertas::findOrFail($request->jenis_kertas_id);
+        $minOrder = max((int) $produk->min_order, 1);
 
-        // Pricing Engine Sync with Section 8 rules
-        $hargaSatuan = $this->calculateCustomPrice(
-            $produk->kategori->slug, // Use Category Slug for logic
+        if ((int) $request->jumlah < $minOrder) {
+            return redirect()->back()
+                ->withErrors(['jumlah' => 'Minimal order untuk produk ini adalah ' . $minOrder . ' ' . $produk->unit_label . '.'])
+                ->withInput();
+        }
+
+        [$ukuran, $jenis] = $this->pricingService->resolveSpecs(
+            $produk,
+            $request->ukuran_kertas_id,
+            $request->jenis_kertas_id
+        );
+
+        $finishingInput = $produk->is_finishing
+            ? $this->pricingService->normalizeFinishing($request->input('finishing'))
+            : [];
+        $opsiPotong = $produk->is_cutting && $request->filled('opsi_potong')
+            ? $request->opsi_potong
+            : null;
+
+        $hargaSatuan = $this->pricingService->calculate(
+            $produk,
             $ukuran->nama,
             $jenis->nama,
-            $request->finishing,
-            $request->opsi_potong,
+            $finishingInput,
+            $opsiPotong,
             $request->jumlah
         );
 
@@ -97,10 +118,12 @@ class PesananController extends Controller
 
         // Upload files
         $fileDesain = $request->file('file_desain')->store('desain', 'public');
-        $buktiPembayaran = $request->file('bukti_pembayaran')->store('bukti_bayar', 'public');
+        $buktiPembayaran = $request->hasFile('bukti_pembayaran') 
+            ? $request->file('bukti_pembayaran')->store('bukti_bayar', 'public')
+            : 'Midtrans';
 
         // Prepare Finishing string
-        $finishing = $request->has('finishing') ? implode(', ', $request->finishing) : 'Tidak Pakai';
+        $finishing = $this->pricingService->finishingLabel($finishingInput);
 
         // Create order
         $pesanan = Pesanan::create([
@@ -117,77 +140,21 @@ class PesananController extends Controller
             'bukti_pembayaran' => $buktiPembayaran,
             'estimasi_waktu' => $estimasiWaktu,
             'finishing' => $finishing,
-            'opsi_potong' => $request->opsi_potong ?? 'Potong Kotak',
+            'opsi_potong' => $opsiPotong,
             'status' => 'pending',
+            'pembayaran_status' => 'pending',
         ]);
 
-        return redirect()->route('home')
-            ->with('success', 'Pesanan berhasil dibuat! Nomor pesanan: ' . $pesanan->nomor_pesanan)
-            ->with('feedback_prompt', true);
-    }
-
-    /**
-     * Logic for custom pricing engine
-     */
-    private function calculateCustomPrice($slug, $ukuran, $bahan, $finishing, $potong, $jumlah = 1)
-    {
-        $price = 0;
-
-        if ($slug === 'poster') {
-            // Simplified size-based pricing
-            $price = ($ukuran === 'A3' || $ukuran === 'Custom') ? 7000 : 5000;
-        } elseif ($slug === 'sticker') {
-            // Size-based pricing for both vinyl and chromo
-            if (str_contains($bahan, 'Vinyl')) {
-                // Vinyl with size-based pricing
-                if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 11000;
-                elseif ($ukuran === 'A4') $price = 8000;
-                elseif ($ukuran === 'A5') $price = 6000;
-                elseif ($ukuran === 'A6') $price = 4000;
-                else $price = 8000; // default
-            } else {
-                // Chromo with size-based pricing
-                if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 8000;
-                elseif ($ukuran === 'A4') $price = 6000;
-                elseif ($ukuran === 'A5') $price = 4000;
-                elseif ($ukuran === 'A6') $price = 2000;
-                else $price = 6000; // default
-            }
-            // Add cutting options
-            if ($potong === 'Kiss Cut') $price += 4000;
-            elseif ($potong === 'Die Cut') $price += 8000;
-        } elseif ($slug === 'kartu-nama') {
-            $price = 480; // Per pcs
-            // For kartu nama, finishing is calculated differently
-            if ($finishing && is_array($finishing)) {
-                foreach ($finishing as $f) {
-                    if ($f === 'Glossy' || $f === 'Doff') {
-                        // Rp 4.000 per 25 pcs
-                        $finishingCost = ceil($jumlah / 25) * 4000;
-                        $price += ($finishingCost / $jumlah); // Distribute per pcs
-                    }
-                }
-            }
-            return $price; // Return early for kartu-nama
-        } elseif ($slug === 'kartu-ucapan') {
-            $price = 7000;
-        } elseif ($slug === 'brosur') {
-            // Size-based pricing for brosur
-            if ($ukuran === 'A3' || $ukuran === 'Custom') $price = 5000;
-            elseif ($ukuran === 'A4') $price = 4000;
-            elseif ($ukuran === 'A5') $price = 3000;
-            elseif ($ukuran === 'A6') $price = 2000;
-            else $price = 5000; // default for unknown/custom
+        // Generate Midtrans Snap Token
+        try {
+            $snapToken = $this->midtransService->getSnapToken($pesanan);
+            $pesanan->update(['snap_token' => $snapToken]);
+        } catch (\Exception $e) {
+            // Log error or handle failure
         }
 
-        // Add Finishing (for non-kartu-nama products)
-        if ($finishing && is_array($finishing)) {
-            foreach ($finishing as $f) {
-                if ($f === 'Glossy' || $f === 'Doff') $price += 4000;
-            }
-        }
-
-        return $price;
+        return redirect()->route('pelanggan.pesanan.show', $pesanan->id)
+            ->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
     }
 
     /**
@@ -196,7 +163,7 @@ class PesananController extends Controller
     public function show($id)
     {
         $pesanan = Pesanan::where('user_id', auth()->id())
-            ->with(['produk', 'ukuranKertas', 'jenisKertas', 'kasir', 'operator'])
+            ->with(['produk', 'ukuranKertas', 'jenisKertas', 'kasir', 'operator', 'transaksi'])
             ->find($id);
 
         if (!$pesanan) {
@@ -204,7 +171,63 @@ class PesananController extends Controller
                 ->with('error', 'Pesanan tidak ditemukan atau sudah dibatalkan.');
         }
 
-        return view('pelanggan.pesanan.show', compact('pesanan'));
+        $paymentModel = $pesanan->transaksi ?: $pesanan;
+
+        if ($paymentModel->pembayaran_status === 'pending') {
+            try {
+                $snapToken = $this->midtransService->getSnapToken($paymentModel);
+                $paymentModel->update(['snap_token' => $snapToken]);
+
+                $paymentModel->setAttribute('snap_token', $snapToken);
+            } catch (\Exception $e) {
+                session()->flash('error', 'Pesanan sudah tersimpan, tetapi kode pembayaran Midtrans belum bisa dibuat: ' . $e->getMessage());
+            }
+        }
+
+        $pesananItems = Pesanan::where('user_id', auth()->id())
+            ->where('nomor_pesanan', $pesanan->nomor_pesanan)
+            ->with(['produk.kategori', 'ukuranKertas', 'jenisKertas'])
+            ->orderBy('id')
+            ->get();
+
+        $groupTotal = (int) ($pesanan->transaksi->total_harga ?? $pesananItems->sum('total_harga'));
+
+        return view('pelanggan.pesanan.show', compact('pesanan', 'pesananItems', 'groupTotal'));
+    }
+
+    public function paymentStatus($id)
+    {
+        $pesanan = Pesanan::where('user_id', auth()->id())
+            ->with('transaksi')
+            ->findOrFail($id);
+
+        $orderId = $this->resolveOrderId($requestOrderId = request()->query('order_id'));
+        if ($orderId) {
+            try {
+                $this->midtransService->syncTransactionStatus($orderId);
+                $pesanan->refresh();
+                $pesanan->load('transaksi');
+            } catch (\Exception $e) {
+                // Keep current local status if Midtrans status check fails.
+            }
+        }
+
+        $paymentStatus = $pesanan->transaksi->pembayaran_status ?? $pesanan->pembayaran_status;
+        $redirectUrl = $paymentStatus === 'paid'
+            ? route('pelanggan.pesanan.show', ['id' => $pesanan->id, 'show_feedback' => 1])
+            : route('pelanggan.pesanan.show', $pesanan->id);
+
+        return response()->json([
+            'payment_status' => $paymentStatus,
+            'status' => $pesanan->status,
+            'is_paid' => $paymentStatus === 'paid',
+            'redirect_url' => $redirectUrl,
+        ]);
+    }
+
+    private function resolveOrderId(?string $orderId): ?string
+    {
+        return is_string($orderId) && trim($orderId) !== '' ? trim($orderId) : null;
     }
 
     /**
@@ -248,30 +271,41 @@ class PesananController extends Controller
     {
         $produk = Produk::find($request->produk_id);
         
-        // Get first available paper size and type as default
-        $defaultUkuranId = UkuranKertas::first()->id ?? null;
-        $defaultJenisId = JenisKertas::first()->id ?? null;
-
-        $ukuranId = $request->ukuran_kertas_id ?? $defaultUkuranId;
-        $jenisId = $request->jenis_kertas_id ?? $defaultJenisId;
-
-        $ukuran = UkuranKertas::find($ukuranId);
-        $jenis = JenisKertas::find($jenisId);
+        [$ukuran, $jenis] = $produk
+            ? $this->pricingService->resolveSpecs($produk, $request->ukuran_kertas_id, $request->jenis_kertas_id)
+            : [null, null];
 
         if (!$produk || !$ukuran || !$jenis) {
             return response()->json(['error' => 'Data tidak lengkap'], 422);
         }
 
-        $hargaSatuan = $this->calculateCustomPrice(
-            $produk->kategori->slug, // Use Category Slug for logic
+        $jumlah = max((int) $request->input('jumlah', 1), 1);
+        $minOrder = max((int) $produk->min_order, 1);
+
+        if ($jumlah < $minOrder) {
+            return response()->json([
+                'error' => 'Minimal order untuk produk ini adalah ' . $minOrder . ' ' . $produk->unit_label . '.',
+            ], 422);
+        }
+
+        $finishingInput = $produk->is_finishing
+            ? $this->pricingService->normalizeFinishing($request->input('finishing'))
+            : [];
+        $opsiPotong = $produk->is_cutting && $request->filled('opsi_potong')
+            ? $request->opsi_potong
+            : null;
+
+        $hargaSatuan = $this->pricingService->calculate(
+            $produk,
             $ukuran->nama,
             $jenis->nama,
-            $request->finishing,
-            $request->opsi_potong
+            $finishingInput,
+            $opsiPotong,
+            $jumlah
         );
 
-        $totalHarga = $hargaSatuan * $request->jumlah;
-        $estimasiWaktu = ceil($produk->estimasi_waktu_per_unit * $request->jumlah);
+        $totalHarga = $hargaSatuan * $jumlah;
+        $estimasiWaktu = ceil($produk->estimasi_waktu_per_unit * $jumlah);
 
         return response()->json([
             'harga_satuan' => $hargaSatuan,
@@ -289,19 +323,29 @@ class PesananController extends Controller
     {
         $pesanan = Pesanan::where('user_id', auth()->id())->findOrFail($id);
 
-        if ($pesanan->status !== 'pending') {
+        $pesananItems = Pesanan::where('user_id', auth()->id())
+            ->where('nomor_pesanan', $pesanan->nomor_pesanan)
+            ->get();
+
+        if ($pesananItems->contains(fn ($item) => $item->status !== 'pending')) {
             return redirect()->back()->with('error', 'Hanya pesanan berstatus "Menunggu Validasi" yang dapat dibatalkan.');
         }
 
-        // Delete associated files
-        if ($pesanan->file_desain) {
-            Storage::disk('public')->delete($pesanan->file_desain);
-        }
-        if ($pesanan->bukti_pembayaran && $pesanan->bukti_pembayaran !== 'Pesanan Langsung') {
-            Storage::disk('public')->delete($pesanan->bukti_pembayaran);
+        $fileDesainPaths = $pesananItems->pluck('file_desain')->filter()->unique();
+        foreach ($fileDesainPaths as $path) {
+            Storage::disk('public')->delete($path);
         }
 
-        $pesanan->delete();
+        $buktiPaths = $pesananItems->pluck('bukti_pembayaran')
+            ->filter(fn ($path) => !empty($path) && !in_array($path, ['Pesanan Langsung', 'Midtrans'], true))
+            ->unique();
+        foreach ($buktiPaths as $path) {
+            Storage::disk('public')->delete($path);
+        }
+
+        Pesanan::where('user_id', auth()->id())
+            ->where('nomor_pesanan', $pesanan->nomor_pesanan)
+            ->delete();
 
         return redirect()->route('pelanggan.pesanan.index')
             ->with('success', 'Pesanan ' . $pesanan->nomor_pesanan . ' berhasil dibatalkan.');

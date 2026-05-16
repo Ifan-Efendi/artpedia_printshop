@@ -16,14 +16,8 @@
             <!-- Product Image -->
             <div class="col-lg-5">
                 <div class="card">
-                    @if($produk->gambar)
-                        <img src="{{ asset('storage/' . $produk->gambar) }}" class="card-img-top" alt="{{ $produk->nama }}"
-                            style="object-fit: cover;">
-                    @else
-                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 350px;">
-                            <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
-                        </div>
-                    @endif
+                    <img src="{{ $produk->gambar_url }}" class="card-img-top" alt="{{ $produk->nama }}"
+                        style="object-fit: cover;">
                 </div>
             </div>
 
@@ -36,7 +30,7 @@
 
                         <div class="mb-4">
                             <span class="fs-3 fw-bold text-primary">{{ $produk->harga_format }}</span>
-                            <span class="text-muted">/lembar</span>
+                            <span class="text-muted">/{{ $produk->harga_unit_label }}</span>
                         </div>
 
                         <div class="mb-4">
@@ -49,7 +43,7 @@
                                 <div class="bg-light rounded p-3">
                                     <i class="bi bi-stack text-primary me-2"></i>
                                     <small class="text-muted">Min. Order</small>
-                                    <div class="fw-bold">{{ $produk->min_order }} lembar</div>
+                                    <div class="fw-bold">{{ $produk->min_order }} {{ $produk->unit_label }}</div>
                                 </div>
                             </div>
                         </div>
@@ -79,14 +73,8 @@
                     @foreach($produkTerkait as $related)
                         <div class="col-6 col-lg-3">
                             <div class="card h-100">
-                                @if($related->gambar)
-                                    <img src="{{ asset('storage/' . $related->gambar) }}" class="card-img-top"
-                                        alt="{{ $related->nama }}" style="height: 150px; object-fit: cover;">
-                                @else
-                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                        <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                    </div>
-                                @endif
+                                <img src="{{ $related->gambar_url }}" class="card-img-top"
+                                    alt="{{ $related->nama }}" style="height: 150px; object-fit: cover;">
                                 <div class="card-body">
                                     <h6 class="fw-bold">{{ $related->nama }}</h6>
                                     <div class="d-flex justify-content-between align-items-center">

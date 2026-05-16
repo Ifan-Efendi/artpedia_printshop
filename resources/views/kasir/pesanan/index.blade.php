@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Verifikasi Pesanan')
+@section('title', 'Menunggu Pembayaran')
 
 @section('content')
     <div class="page-header d-flex justify-content-between align-items-start">
         <div>
-            <h1><i class="bi bi-receipt me-2"></i>Daftar Pesanan</h1>
-            <p>Kelola dan verifikasi pembayaran pesanan pelanggan.</p>
+            <h1><i class="bi bi-receipt me-2"></i>Pesanan Menunggu Pembayaran</h1>
+            <p>Kelola pesanan yang menunggu pembayaran dan antrian produksi.</p>
         </div>
     </div>
 
@@ -16,7 +16,7 @@
                 <div class="col-md-4">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select">
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Verifikasi
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Pembayaran
                         </option>
                         <option value="dalam_antrian" {{ request('status') == 'dalam_antrian' ? 'selected' : '' }}>Dalam
                             Antrian</option>

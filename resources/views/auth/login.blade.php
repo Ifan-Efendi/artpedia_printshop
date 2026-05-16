@@ -122,8 +122,8 @@
 <div class="auth-wrap">
     <div class="card auth-card shadow-sm">
         <div class="card-body">
-            <h1 class="auth-title">Masuk Akun</h1>
-            <p class="auth-subtitle">Masuk untuk melanjutkan pemesanan cetak Anda.</p>
+            <h1 class="auth-title text-center">Login</h1>
+            <p class="auth-subtitle text-center">Masuk untuk melanjutkan pemesanan</p>
 
             <form method="POST" action="{{ route('login') }}">
                 @csrf
