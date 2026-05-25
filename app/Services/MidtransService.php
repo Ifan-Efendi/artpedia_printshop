@@ -14,16 +14,13 @@ class MidtransService
         \Midtrans\Config::$isProduction = config('midtrans.is_production');
         \Midtrans\Config::$isSanitized = config('midtrans.is_sanitized');
         \Midtrans\Config::$is3ds = config('midtrans.is_3ds');
+        \Midtrans\Config::$curlOptions = [];
+        \Midtrans\Config::$appendNotifUrl = config('midtrans.notification_url');
     }
 
     public function getSnapToken($model)
     {
         $this->init();
-        
-        Log::info('MIDTRANS_DEBUG: Memulai pembuatan token', [
-            'merchant_id' => config('midtrans.merchant_id'),
-            'is_production' => config('midtrans.is_production')
-        ]);
 
         $orderId = ($model instanceof Pesanan) ? $model->nomor_pesanan : $model->nomor_transaksi;
         
@@ -56,14 +53,11 @@ class MidtransService
             ],
         ];
 
-        Log::info('MIDTRANS_DEBUG: Parameter yang dikirim', $params);
-
         try {
-            $token = \Midtrans\Snap::getSnapToken($params);
-            Log::info('MIDTRANS_DEBUG: Token berhasil didapat', ['token' => $token]);
-            return $token;
+            return \Midtrans\Snap::getSnapToken($params);
         } catch (\Exception $e) {
-            Log::error('MIDTRANS_DEBUG: Gagal mendapatkan token', [
+            Log::error('MIDTRANS: Gagal mendapatkan token pembayaran', [
+                'order_id' => $orderId,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode()
             ]);

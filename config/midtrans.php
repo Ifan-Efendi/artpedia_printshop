@@ -7,4 +7,5 @@ return [
     'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
     'is_sanitized' => true,
     'is_3ds' => true,
+    'notification_url' => env('MIDTRANS_NOTIFICATION_URL', rtrim(env('APP_URL', ''), '/') . '/api/midtrans/callback'),
 ];

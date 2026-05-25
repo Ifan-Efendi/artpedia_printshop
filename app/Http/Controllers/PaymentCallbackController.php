@@ -137,6 +137,14 @@ class PaymentCallbackController extends Controller
 
         $this->midtransService->applyStatusUpdate($orderId, $status);
 
+        Log::info('MIDTRANS_CALLBACK: Status pembayaran berhasil diperbarui', [
+            'order_id' => $orderId,
+            'base_order_id' => $baseOrderId,
+            'transaction_status' => $status,
+            'model' => $isTransaction ? 'transaksi' : 'pesanan',
+            'model_id' => $model->id,
+        ]);
+
         return response()->json(['message' => 'Callback handled successfully']);
     }
 }

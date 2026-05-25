@@ -2,6 +2,10 @@
 
 @section('title', 'Artpedia Printshop')
 
+@push('styles')
+    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap" rel="stylesheet">
+@endpush
+
 @section('content')
     <style>
         .hero-section {
@@ -19,13 +23,23 @@
             margin-bottom: 2rem;
         }
 
+        .hero-row {
+            min-height: 455px;
+        }
+
+        .hero-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
         .hero-title {
             font-family: 'Montserrat', sans-serif;
             font-size: 3.5rem;
             font-weight: 700;
             color: #ffffff;
             line-height: 1.1;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.4rem;
             letter-spacing: 0;
             display: flex;
             align-items: baseline;
@@ -36,6 +50,21 @@
         .brand-sub {
             font-weight: 700;
             color: rgba(255, 255, 255, 0.95);
+        }
+
+        .hero-tagline {
+            display: inline-block;
+            position: relative;
+            font-family: 'Kaushan Script', cursive;
+            font-weight: 400;
+            color: #ffbf12;
+            font-size: 2rem;
+            line-height: 1.25;
+            margin: 0 0 1.35rem;
+            text-shadow: 0 3px 12px rgba(74, 0, 44, 0.35);
+            max-width: 100%;
+            transform: skewX(-6deg);
+            transform-origin: left center;
         }
 
         @media (max-width: 991px) {
@@ -52,10 +81,59 @@
             line-height: 1.6;
         }
 
+        .hero-service-list {
+            max-width: 560px;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .hero-service-list > [class*="col-"] {
+            padding-left: 0;
+        }
+
+        .hero-contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 1.15rem;
+            line-height: 1.6;
+        }
+
+        .hero-contact-info a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: inherit;
+        }
+
+        .hero-contact-info a:hover {
+            color: #ffbf12;
+        }
+
+        .hero-contact-info i {
+            color: #ffbf12;
+            margin-right: 0.5rem;
+        }
+
+        .hero-visual {
+            min-height: 430px;
+        }
+
+        .hero-actions {
+            margin-top: 1rem;
+        }
+
         @media (max-width: 991px) {
             .hero-section {
                 padding: 3rem 0;
                 text-align: left !important; /* Paksa rata kiri */
+            }
+            .hero-row {
+                min-height: auto;
+            }
+            .hero-copy {
+                justify-content: flex-start;
             }
             .hero-title {
                 font-family: 'Montserrat', sans-serif !important;
@@ -68,7 +146,7 @@
                 flex-wrap: wrap;
                 gap: 10px;
                 text-align: left !important;
-                margin-bottom: 1rem !important;
+                margin-bottom: 0.35rem !important;
             }
             .brand-sub {
                 display: inline-block !important;
@@ -76,10 +154,29 @@
                 font-size: 2.2rem !important; /* Ukuran sama dengan Artpedia */
                 margin-top: 0 !important;
             }
+            .hero-tagline {
+                font-size: 1.45rem;
+                line-height: 1.35;
+                margin-bottom: 1.15rem;
+                text-align: left;
+            }
             .hero-subtitle {
                 font-size: 1.1rem !important;
                 text-align: left !important;
                 margin-left: 0 !important;
+            }
+            .hero-service-list {
+                max-width: 100%;
+            }
+            .hero-contact-info {
+                font-size: 1.1rem !important;
+                line-height: 1.6;
+            }
+            .hero-visual {
+                min-height: 320px;
+            }
+            .hero-actions {
+                margin-top: 0.75rem;
             }
             .hero-features-row {
                 justify-content: center;
@@ -270,17 +367,16 @@
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-7">
+            <div class="row align-items-center hero-row">
+                <div class="col-lg-7 hero-copy">
                     <h1 class="hero-title">
                         <span>Artpedia</span>
                         <span class="brand-sub">Printshop</span>
                     </h1>
+                    <p class="hero-tagline">Harga Terjangkau, Hasil Berkualitas</p>
                     <div class="hero-subtitle mb-3">
-                        <p class="mb-1">Kami membantu mewujudkan kebutuhan cetak Anda dengan kualitas bagus, hasil terbaik, dan profesional.</p>
-                        <p class="mb-0">Konsultasikan semua kebutuhan dan spesifikasi cetak Anda.</p>
+                        <p class="mb-0">Mau cetak apa hari ini? Kirim desain atau ceritakan kebutuhanmu dan kami siap membantu.</p>
                     </div>
-                    <p class="hero-subtitle mb-2">Kami menyediakan :</p>
                     <div class="row g-2 mb-4 hero-service-list hero-subtitle">
                         <div class="col-6 col-md-5">
                             <div class="d-flex align-items-center">
@@ -313,7 +409,17 @@
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-3 flex-wrap justify-content-start">
+                    <div class="hero-contact-info">
+                        <div>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            <span>Jl. Raya Bojongsoang No.190, Lengkong, Kec. Bojongsoang, Kabupaten Bandung, Jawa Barat 40288</span>
+                        </div>
+                        <div>
+                            <i class="bi bi-whatsapp"></i>
+                            <a href="https://wa.me/6282130003595" target="_blank" rel="noopener">0821-3000-3595</a>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 flex-wrap justify-content-start hero-actions">
                         <a href="{{ route('katalog') }}" class="btn btn-light px-4 py-2 shadow-sm border-0">
                             <i class="bi bi-grid me-2"></i> Lihat Katalog
                         </a>
@@ -337,11 +443,8 @@
                             @endif
                         @endguest
                     </div>
-
-
-
                 </div>
-                <div class="col-lg-5 text-center mt-5 mt-lg-0 position-relative d-flex align-items-center justify-content-center" style="min-height: 350px;">
+                <div class="col-lg-5 text-center mt-5 mt-lg-0 position-relative d-flex align-items-center justify-content-center hero-visual">
                     <!-- Planetary Rings -->
                     <div class="ring-outer d-none d-md-block"></div>
                     <div class="ring-inner d-none d-md-block"></div>
@@ -509,8 +612,8 @@
                     </div>
                     <h5 class="fw-bold">Kontak</h5>
                     <p class="text-muted mb-0">Hubungi kami via WhatsApp untuk respon lebih cepat:<br>
-                        <a href="http://10.20.107.92:8000" target="_blank" class="text-decoration-none fw-bold text-success">
-                            +62 821-3000-3595
+                        <a href="https://wa.me/6282130003595" target="_blank" rel="noopener" class="text-decoration-none fw-bold text-success">
+                            0821-3000-3595
                         </a>
                     </p>
                 </div>
@@ -529,6 +632,16 @@
 
     <!-- Footer -->
     <footer class="container text-center py-4 text-muted border-top">
+        <p class="mb-2">
+            <i class="bi bi-geo-alt me-1"></i>
+            Jl. Raya Bojongsoang No.190, Lengkong, Kec. Bojongsoang, Kabupaten Bandung, Jawa Barat 40288
+        </p>
+        <p class="mb-2">
+            <i class="bi bi-whatsapp me-1"></i>
+            <a href="https://wa.me/6282130003595" target="_blank" rel="noopener" class="text-decoration-none text-success fw-semibold">
+                0821-3000-3595
+            </a>
+        </p>
         <p class="mb-0">&copy; {{ date('Y') }} Artpedia Printshop. All rights reserved.</p>
     </footer>
 @endsection

@@ -362,6 +362,25 @@
     const minOrderText = document.getElementById('min-order-text');
     const finishingGroup = document.getElementById('finishing-group');
     const cuttingGroup = document.getElementById('cutting-group');
+    const hitungHargaUrl = @json(route('pelanggan.hitung-harga', [], false));
+
+    function formatRupiah(value) {
+        return `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+    }
+
+    function calculateLocalTotal(produk, qty, fin, cut) {
+        let hargaSatuan = Number(produk.harga_satuan || 0);
+
+        if (produk.is_finishing && fin && fin.dataset.harga) {
+            hargaSatuan += Number(fin.dataset.harga || 0);
+        }
+
+        if (produk.is_cutting && cut && cut.dataset.harga) {
+            hargaSatuan += Number(cut.dataset.harga || 0);
+        }
+
+        return hargaSatuan * qty;
+    }
     
     kategoriSelect.addEventListener('change', function() {
         fillProdukByKategori(this.value);
@@ -449,9 +468,10 @@
         }
         const fin = document.querySelector('input[name="finishing"]:checked');
         const cut = document.querySelector('input[name="opsi_potong"]:checked');
+        document.getElementById('total_price').innerText = formatRupiah(calculateLocalTotal(produk, qty, fin, cut));
 
         try {
-            const response = await fetch("{{ route('pelanggan.hitung-harga') }}", {
+            const response = await fetch(hitungHargaUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -466,7 +486,10 @@
                 }),
             });
 
-            if (!response.ok) return;
+            if (!response.ok) {
+                console.error('Gagal menghitung harga', await response.text());
+                return;
+            }
 
             const data = await response.json();
             document.getElementById('total_price').innerText = data.total_harga_format;
