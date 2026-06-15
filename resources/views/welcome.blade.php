@@ -632,16 +632,6 @@
 
     <!-- Footer -->
     <footer class="container text-center py-4 text-muted border-top">
-        <p class="mb-2">
-            <i class="bi bi-geo-alt me-1"></i>
-            Jl. Raya Bojongsoang No.190, Lengkong, Kec. Bojongsoang, Kabupaten Bandung, Jawa Barat 40288
-        </p>
-        <p class="mb-2">
-            <i class="bi bi-whatsapp me-1"></i>
-            <a href="https://wa.me/6282130003595" target="_blank" rel="noopener" class="text-decoration-none text-success fw-semibold">
-                0821-3000-3595
-            </a>
-        </p>
         <p class="mb-0">&copy; {{ date('Y') }} Artpedia Printshop. All rights reserved.</p>
     </footer>
 @endsection

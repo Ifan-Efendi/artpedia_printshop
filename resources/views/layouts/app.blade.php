@@ -781,7 +781,7 @@
                                 style="background-color: #9d005e; border-color: #9d005e; min-width: 190px;">
                                 Kembali ke Dashboard
                             </a>
-                            <a href="https://www.google.com" target="_blank" rel="noopener"
+                            <a href="https://forms.gle/RWLXe4ncwE2ZkgdF7" target="_blank" rel="noopener"
                                 class="btn btn-success px-4 fw-bold d-inline-flex align-items-center justify-content-center"
                                 style="min-width: 190px;">
                                 Isi Kuesioner

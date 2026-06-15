@@ -1,0 +1,125 @@
+@startuml
+title ERD Sistem Informasi Pemesanan Jasa Percetakan
+
+hide circle
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor White
+  BorderColor Black
+}
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  name : varchar
+  email : varchar
+  password : varchar
+  role : enum
+  telepon : varchar
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "kategori_produk" as kategori_produk {
+  * id : bigint <<PK>>
+  --
+  nama : varchar
+  slug : varchar
+  deskripsi : text
+  gambar : varchar
+  aktif : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "produk" as produk {
+  * id : bigint <<PK>>
+  --
+  kategori_id : bigint <<FK>>
+  nama : varchar
+  slug : varchar
+  deskripsi : text
+  gambar : varchar
+  harga_satuan : decimal
+  min_order : integer
+  is_finishing : boolean
+  is_cutting : boolean
+  estimasi_waktu_per_unit : integer
+  aktif : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "ukuran_kertas" as ukuran_kertas {
+  * id : bigint <<PK>>
+  --
+  nama : varchar
+  dimensi : varchar
+  faktor_harga : decimal
+  faktor_waktu : decimal
+  aktif : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "jenis_kertas" as jenis_kertas {
+  * id : bigint <<PK>>
+  --
+  nama : varchar
+  deskripsi : text
+  harga_tambahan : decimal
+  aktif : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "transaksis" as transaksis {
+  * id : bigint <<PK>>
+  --
+  nomor_transaksi : varchar
+  user_id : bigint <<FK>>
+  total_harga : decimal
+  status : enum
+  snap_token : varchar
+  pembayaran_status : varchar
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "pesanan" as pesanan {
+  * id : bigint <<PK>>
+  --
+  nomor_pesanan : varchar
+  user_id : bigint <<FK>>
+  transaksi_id : bigint <<FK>>
+  produk_id : bigint <<FK>>
+  ukuran_kertas_id : bigint <<FK>>
+  jenis_kertas_id : bigint <<FK>>
+  jumlah : integer
+  file_desain : varchar
+  catatan : text
+  finishing : varchar
+  opsi_potong : varchar
+  harga_satuan : decimal
+  total_harga : decimal
+  estimasi_waktu : integer
+  status : enum
+  pembayaran_status : varchar
+  diproses_oleh : bigint <<FK>>
+  mulai_produksi_at : timestamp
+  selesai_produksi_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+kategori_produk ||--o{ produk : memiliki
+produk ||--o{ pesanan : dipesan
+ukuran_kertas ||--o{ pesanan : digunakan
+jenis_kertas ||--o{ pesanan : digunakan
+
+users ||--o{ transaksis : melakukan
+users ||--o{ pesanan : membuat
+users ||--o{ pesanan : memproses
+transaksis ||--o{ pesanan : mencakup
+
+@enduml

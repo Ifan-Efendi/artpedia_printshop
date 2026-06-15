@@ -44,6 +44,23 @@
             width: 100%;
             border-collapse: collapse;
         }
+        .payment-table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+        }
+        .payment-table th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .payment-table td {
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+        }
         .main-table th {
             background: #f1f5f9;
             text-align: left;
@@ -90,14 +107,37 @@
         </tr>
     </table>
 
+    <table class="payment-table">
+        <thead>
+            <tr>
+                <th>Metode Pembayaran</th>
+                <th class="text-center">Total Pesanan</th>
+                <th class="text-right">Total Pendapatan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Cash</td>
+                <td class="text-center">{{ $stats['total_pesanan_cash'] }}</td>
+                <td class="text-right">Rp {{ number_format($stats['total_pendapatan_cash'], 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Cashless</td>
+                <td class="text-center">{{ $stats['total_pesanan_cashless'] }}</td>
+                <td class="text-right">Rp {{ number_format($stats['total_pendapatan_cashless'], 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+
     <table class="main-table">
         <thead>
             <tr>
-                <th>Waktu Validasi</th>
+                <th>Waktu Selesai</th>
                 <th>No. Pesanan</th>
                 <th>Pelanggan</th>
                 <th>Produk & Spesifikasi</th>
                 <th class="text-center">Jumlah</th>
+                <th>Metode Pembayaran</th>
                 <th class="text-right">Total</th>
                 <th>Status</th>
             </tr>
@@ -105,7 +145,7 @@
         <tbody>
             @forelse($pesanans as $pesanan)
             <tr>
-                <td>{{ optional($pesanan->dikonfirmasi_at ?? $pesanan->created_at)->format('H:i') ?? '-' }}</td>
+                <td>{{ optional($pesanan->selesai_produksi_at)->format('H:i') ?? '-' }}</td>
                 <td>{{ $pesanan->nomor_pesanan }}</td>
                 <td>{{ optional($pesanan->user)->name ?? 'Pelanggan Umum' }}</td>
                 <td>
@@ -115,12 +155,13 @@
                     </small>
                 </td>
                 <td class="text-center">{{ $pesanan->jumlah }}</td>
+                <td>{{ $pesanan->metode_pembayaran_label }}</td>
                 <td class="text-right">Rp {{ number_format($pesanan->total_harga, 0, ',', '.') }}</td>
                 <td>{{ $pesanan->status_label }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="text-center">Tidak ada data pesanan untuk tanggal ini.</td>
+                <td colspan="8" class="text-center">Tidak ada pesanan selesai untuk tanggal ini.</td>
             </tr>
             @endforelse
         </tbody>

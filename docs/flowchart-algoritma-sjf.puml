@@ -1,0 +1,52 @@
+@startuml
+title Flowchart Algoritma SJF
+
+start
+
+:Mulai proses penjadwalan
+antrian produksi;
+
+:Input data pesanan
+yang masuk ke antrian;
+
+:Tentukan estimasi waktu
+pengerjaan setiap pesanan;
+
+:Bentuk daftar antrian
+berdasarkan pesanan yang
+berstatus "dalam_antrian";
+
+while (Apakah antrian masih berisi pesanan?) is (Ya)
+  :Bandingkan estimasi waktu
+  seluruh pesanan dalam antrian;
+
+  :Pilih pesanan dengan
+  estimasi waktu paling kecil;
+
+  if (Terdapat estimasi waktu\nyang sama?) then (Ya)
+    :Prioritaskan pesanan
+    yang lebih dulu dikonfirmasi;
+
+    if (Waktu konfirmasi juga sama?) then (Ya)
+      :Prioritaskan pesanan
+      dengan id paling kecil;
+    endif
+  endif
+
+  :Pesanan terpilih menjadi
+  prioritas pengerjaan berikutnya;
+
+  :Pesanan diproses;
+
+  :Pesanan selesai;
+
+  :Keluarkan pesanan selesai
+  dari antrian;
+endwhile (Tidak)
+
+:Seluruh antrian produksi
+telah selesai dijadwalkan;
+
+stop
+
+@enduml

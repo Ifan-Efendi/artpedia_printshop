@@ -7,7 +7,7 @@
     <div class="row align-items-center">
         <div class="col-md-8">
             <h1>Laporan Cetak Harian</h1>
-            <p>Rekapitulasi pesanan dan pendapatan harian.</p>
+            <p>Rekapitulasi pesanan selesai dan pendapatan harian.</p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
             <a href="{{ route('kasir.laporan.export', ['tanggal' => $date]) }}" class="btn btn-outline-danger">
@@ -72,11 +72,12 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Waktu Validasi</th>
+                        <th>Waktu Selesai</th>
                         <th>No. Pesanan</th>
                         <th>Pelanggan</th>
                         <th>Produk & Spesifikasi</th>
                         <th class="text-center">Jumlah</th>
+                        <th>Metode Pembayaran</th>
                         <th class="text-end">Total Harga</th>
                         <th>Status</th>
                     </tr>
@@ -84,7 +85,7 @@
                 <tbody>
                     @forelse($pesanans as $pesanan)
                     <tr>
-                        <td>{{ optional($pesanan->dikonfirmasi_at ?? $pesanan->created_at)->format('H:i') ?? '-' }}</td>
+                        <td>{{ optional($pesanan->selesai_produksi_at)->format('H:i') ?? '-' }}</td>
                         <td><code>{{ $pesanan->nomor_pesanan }}</code></td>
                         <td>
                             <div class="fw-bold">{{ optional($pesanan->user)->name ?? 'Pelanggan Umum' }}</div>
@@ -97,6 +98,13 @@
                             </div>
                         </td>
                         <td class="text-center">{{ $pesanan->jumlah }}</td>
+                        <td>
+                            @if($pesanan->metode_pembayaran === 'cash')
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Cash</span>
+                            @else
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Cashless</span>
+                            @endif
+                        </td>
                         <td class="text-end fw-bold">Rp {{ number_format($pesanan->total_harga, 0, ',', '.') }}</td>
                         <td>
                             <span class="badge badge-{{ $pesanan->status_color }}" style="color: #000;">
@@ -106,9 +114,9 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                            <span class="text-muted">Tidak ada data pesanan untuk tanggal ini.</span>
+                            <span class="text-muted">Tidak ada pesanan selesai untuk tanggal ini.</span>
                         </td>
                     </tr>
                     @endforelse

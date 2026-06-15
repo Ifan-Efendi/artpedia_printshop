@@ -30,7 +30,7 @@
                             <span class="input-group-text bg-white border-end-0">
                                 <i class="bi bi-search text-muted"></i>
                             </span>
-                            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Ketik nama produk & tekan Enter..." value="{{ request('search') }}">
+                            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Ketik nama produk..." value="{{ request('search') }}">
                         </div>
                     </div>
                 </form>

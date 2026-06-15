@@ -1,0 +1,104 @@
+@startuml
+title Class Diagram Sistem Informasi Pemesanan Jasa Percetakan
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+class User {
+  +id: int
+  +name: string
+  +email: string
+  +role: string
+  +telepon: string
+  +isPelanggan(): bool
+  +isKasir(): bool
+  +isOperator(): bool
+  +getRoleLabelAttribute(): string
+}
+
+class KategoriProduk {
+  +id: int
+  +nama: string
+  +slug: string
+  +deskripsi: text
+  +aktif: boolean
+}
+
+class Produk {
+  +id: int
+  +nama: string
+  +slug: string
+  +deskripsi: text
+  +gambar: string
+  +harga_satuan: decimal
+  +min_order: int
+  +estimasi_waktu_per_unit: int
+  +is_finishing: boolean
+  +is_cutting: boolean
+  +aktif: boolean
+  +getHargaFormatAttribute(): string
+  +getUnitLabelAttribute(): string
+}
+
+class UkuranKertas {
+  +id: int
+  +nama: string
+  +dimensi: string
+  +faktor_harga: decimal
+  +faktor_waktu: decimal
+  +aktif: boolean
+  +getNamaLengkapAttribute(): string
+}
+
+class JenisKertas {
+  +id: int
+  +nama: string
+  +deskripsi: text
+  +harga_tambahan: decimal
+  +aktif: boolean
+  +getHargaTambahanFormatAttribute(): string
+}
+
+class Transaksi {
+  +id: int
+  +nomor_transaksi: string
+  +total_harga: decimal
+  +status: string
+  +snap_token: string
+  +pembayaran_status: string
+  +getTotalHargaFormatAttribute(): string
+  +generateNomorTransaksi(): string
+}
+
+class Pesanan {
+  +id: int
+  +nomor_pesanan: string
+  +jumlah: int
+  +file_desain: string
+  +catatan: text
+  +harga_satuan: decimal
+  +total_harga: decimal
+  +estimasi_waktu: int
+  +finishing: string
+  +opsi_potong: string
+  +status: string
+  +mulai_produksi_at: datetime
+  +selesai_produksi_at: datetime
+  +getStatusLabelAttribute(): string
+  +getTotalHargaFormatAttribute(): string
+  +getMetodePembayaranLabelAttribute(): string
+  +generateNomorPesanan(): string
+}
+
+KategoriProduk "1" -- "0..*" Produk : memiliki
+Produk "1" -- "0..*" Pesanan : dipesan pada
+UkuranKertas "1" -- "0..*" Pesanan : digunakan
+JenisKertas "1" -- "0..*" Pesanan : digunakan
+
+User "1" -- "0..*" Pesanan : membuat
+User "1" -- "0..*" Transaksi : memiliki
+Transaksi "1" -- "1..*" Pesanan : mencakup
+
+User "1" -- "0..*" Pesanan : memproses\n(operator)
+
+@enduml

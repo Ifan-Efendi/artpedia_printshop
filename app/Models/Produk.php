@@ -97,10 +97,18 @@ class Produk extends Model
             return asset('storage/' . $this->gambar);
         }
 
+        if ($this->gambar && file_exists(public_path('images/' . $this->gambar))) {
+            return asset('images/' . $this->gambar);
+        }
+
         $fallback = $this->gambarFallbackPath();
 
         if ($fallback && Storage::disk('public')->exists($fallback)) {
             return asset('storage/' . $fallback);
+        }
+
+        if ($fallback && file_exists(public_path('images/' . $fallback))) {
+            return asset('images/' . $fallback);
         }
 
         return asset('images/noImage.jpg');
@@ -118,7 +126,11 @@ class Produk extends Model
             return 'produk/sticker-vinyl-a3.png';
         }
 
-        if (Str::contains($text, ['kartu nama', 'kartu-nama', 'id card', 'id-card'])) {
+        if (Str::contains($text, ['id card', 'id-card'])) {
+            return null;
+        }
+
+        if (Str::contains($text, ['kartu nama', 'kartu-nama'])) {
             return 'produk/kartu-nama.png';
         }
 

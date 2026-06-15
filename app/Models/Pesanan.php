@@ -147,6 +147,18 @@ class Pesanan extends Model
         return 'Rp ' . number_format((float) $this->total_harga, 0, ',', '.');
     }
 
+    public function getMetodePembayaranAttribute()
+    {
+        $buktiPembayaran = $this->transaksi->bukti_pembayaran ?? $this->bukti_pembayaran;
+
+        return $buktiPembayaran === 'Pesanan Langsung' ? 'cash' : 'cashless';
+    }
+
+    public function getMetodePembayaranLabelAttribute()
+    {
+        return $this->metode_pembayaran === 'cash' ? 'Cash' : 'Cashless';
+    }
+
     /**
      * Get formatted estimation time
      */

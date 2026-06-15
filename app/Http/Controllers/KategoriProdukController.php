@@ -96,6 +96,18 @@ class KategoriProdukController extends Controller
             ->with('success', 'Kategori "' . $request->nama . '" berhasil diperbarui.');
     }
 
+    /**
+     * Toggle category active status
+     */
+    public function toggleAktif($id)
+    {
+        $kategori = KategoriProduk::findOrFail($id);
+        $kategori->update(['aktif' => ! $kategori->aktif]);
+
+        $status = $kategori->aktif ? 'diaktifkan' : 'dinonaktifkan';
+
+        return back()->with('success', 'Kategori "' . $kategori->nama . '" berhasil ' . $status . '.');
+    }
 
     /**
      * Generate a unique slug

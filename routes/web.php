@@ -23,45 +23,6 @@ use App\Http\Controllers\PaymentCallbackController;
 |
 */
 
-Route::get('/test-midtrans', function () {
-    $serverKey = config('midtrans.server_key');
-    $isProd = config('midtrans.is_production');
-    
-    $authString = base64_encode($serverKey . ':');
-    $url = $isProd ? 'https://app.midtrans.com/snap/v1/transactions' : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-    
-    $payload = [
-        'transaction_details' => [
-            'order_id' => 'TEST-' . time(),
-            'gross_amount' => 10000
-        ]
-    ];
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Accept: application/json',
-        'Authorization: Basic ' . $authString
-    ]);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
-    return response()->json([
-        'PENGATURAN_YANG_TERBACA_OLEH_SISTEM' => [
-            'Merchant_ID' => config('midtrans.merchant_id'),
-            'Server_Key' => $serverKey ? substr($serverKey, 0, 11) . '...' : null,
-            'Mode_Production' => $isProd ? 'YA (Asli)' : 'TIDAK (Sandbox)'
-        ],
-        'HASIL_DARI_SERVER_MIDTRANS' => [
-            'Kode_Status' => $httpCode,
-            'Balasan' => json_decode($response)
-        ]
-    ]);
-});
 // ============ PUBLIC ROUTES ============
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/katalog', [LandingController::class, 'katalog'])->name('katalog');

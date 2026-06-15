@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1120" viewBox="0 0 1500 1120">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,8 L11,4 z" fill="#000"/>
+    </marker>
+    <style>
+      .frame { fill: #fff; stroke: #000; stroke-width: 3; }
+      .line { fill: none; stroke: #000; stroke-width: 3; }
+      .shape { fill: #fff; stroke: #000; stroke-width: 3; }
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 18px; fill: #000; text-anchor: middle; dominant-baseline: middle; }
+      .text { font-family: Arial, Helvetica, sans-serif; font-size: 16px; fill: #000; text-anchor: middle; dominant-baseline: middle; }
+      .small { font-size: 14px; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #000; text-anchor: middle; dominant-baseline: middle; }
+    </style>
+  </defs>
+
+  <!-- Frame dan swimlane -->
+  <rect x="2" y="2" width="1496" height="1116" class="frame"/>
+  <line x1="500" y1="2" x2="500" y2="1118" class="line"/>
+  <line x1="1000" y1="2" x2="1000" y2="1118" class="line"/>
+  <line x1="2" y1="42" x2="1498" y2="42" class="line"/>
+
+  <text x="250" y="22" class="title">Pelanggan</text>
+  <text x="750" y="22" class="title">Kasir</text>
+  <text x="1250" y="22" class="title">Operator Produksi</text>
+
+  <!-- PELANGGAN: pesanan online -->
+  <ellipse cx="150" cy="92" rx="62" ry="30" class="shape"/>
+  <text x="150" y="92" class="text">Mulai</text>
+
+  <polygon points="150,142 212,204 150,266 88,204" class="shape"/>
+  <text x="150" y="190" class="text small">Sudah</text>
+  <text x="150" y="208" class="text small">memiliki</text>
+  <text x="150" y="226" class="text small">akun?</text>
+
+  <rect x="300" y="176" width="130" height="56" class="shape"/>
+  <text x="365" y="204" class="text">Registrasi</text>
+
+  <rect x="88" y="304" width="125" height="56" class="shape"/>
+  <text x="150.5" y="332" class="text">Login</text>
+
+  <rect x="60" y="402" width="205" height="64" class="shape"/>
+  <text x="162.5" y="424" class="text small">Memilih Produk</text>
+  <text x="162.5" y="444" class="text small">dan Spesifikasi</text>
+
+  <rect x="60" y="504" width="205" height="64" class="shape"/>
+  <text x="162.5" y="526" class="text small">Mengisi Detail</text>
+  <text x="162.5" y="546" class="text small">Pesanan</text>
+
+  <polygon points="48,606 280,606 260,670 28,670" class="shape"/>
+  <text x="154" y="628" class="text small">Mengunggah</text>
+  <text x="154" y="648" class="text small">File Desain</text>
+
+  <rect x="60" y="708" width="205" height="64" class="shape"/>
+  <text x="162.5" y="730" class="text small">Menambahkan</text>
+  <text x="162.5" y="750" class="text small">ke Keranjang</text>
+
+  <rect x="60" y="810" width="205" height="64" class="shape"/>
+  <text x="162.5" y="832" class="text small">Checkout</text>
+  <text x="162.5" y="852" class="text small">Pesanan</text>
+
+  <rect x="60" y="912" width="205" height="64" class="shape"/>
+  <text x="162.5" y="934" class="text small">Melakukan</text>
+  <text x="162.5" y="954" class="text small">Pembayaran Cashless (Midtrans)</text>
+
+  <polygon points="370,890 438,958 370,1026 302,958" class="shape"/>
+  <text x="370" y="946" class="text small">Pembayaran</text>
+  <text x="370" y="966" class="text small">berhasil?</text>
+
+  <!-- KASIR: pesanan langsung dan monitoring -->
+  <rect x="620" y="102" width="220" height="64" class="shape"/>
+  <text x="730" y="124" class="text small">Mengelola Data</text>
+  <text x="730" y="144" class="text small">Produk Cetak</text>
+
+  <rect x="620" y="236" width="220" height="64" class="shape"/>
+  <text x="730" y="258" class="text small">Membuat Pesanan</text>
+  <text x="730" y="278" class="text small">Pesanan Langsung dikasir</text>
+
+  <rect x="620" y="370" width="220" height="64" class="shape"/>
+  <text x="730" y="392" class="text small">Input Data Pelanggan</text>
+  <text x="730" y="412" class="text small">dan Detail Pesanan</text>
+
+  <polygon points="610,504 860,504 840,568 590,568" class="shape"/>
+  <text x="725" y="526" class="text small">Mengunggah</text>
+  <text x="725" y="546" class="text small">File Desain</text>
+
+  <polygon points="730,620 798,688 730,756 662,688" class="shape"/>
+  <text x="730" y="676" class="text small">Metode</text>
+  <text x="730" y="696" class="text small">Pembayaran?</text>
+
+  <rect x="545" y="812" width="190" height="64" class="shape"/>
+  <text x="640" y="834" class="text small">Pembayaran Cash</text>
+  <text x="640" y="854" class="text small">oleh Pelanggan</text>
+
+  <rect x="765" y="812" width="190" height="64" class="shape"/>
+  <text x="860" y="834" class="text small">Pembayaran</text>
+  <text x="860" y="854" class="text small">Cashless (Midtrans) Kasir</text>
+
+  <rect x="620" y="936" width="220" height="64" class="shape"/>
+  <text x="730" y="958" class="text small">Status Pesanan</text>
+  <text x="730" y="978" class="text small">Dalam Antrian</text>
+
+  <rect x="620" y="1034" width="220" height="56" class="shape"/>
+  <text x="730" y="1052" class="text small">Riwayat dan Laporan</text>
+  <text x="730" y="1070" class="text small">Pesanan Selesai</text>
+
+  <!-- OPERATOR PRODUKSI -->
+  <rect x="1135" y="102" width="230" height="64" class="shape"/>
+  <text x="1250" y="124" class="text small">Menerima Antrian</text>
+  <text x="1250" y="144" class="text small">Produksi</text>
+
+  <rect x="1135" y="236" width="230" height="64" class="shape"/>
+  <text x="1250" y="258" class="text small">Mengerjakan Pesanan</text>
+  <text x="1250" y="278" class="text small">Sesuai urutan (SJF)</text>
+
+  <rect x="1135" y="370" width="230" height="64" class="shape"/>
+  <text x="1250" y="392" class="text small">Status Pesanan</text>
+  <text x="1250" y="412" class="text small">Diproses</text>
+
+  <polygon points="1122,504 1388,504 1368,568 1102,568" class="shape"/>
+  <text x="1245" y="526" class="text small">Mengunduh</text>
+  <text x="1245" y="546" class="text small">File Desain</text>
+
+  <rect x="1135" y="638" width="230" height="64" class="shape"/>
+  <text x="1250" y="660" class="text small">Memproses</text>
+  <text x="1250" y="680" class="text small">Pesanan Cetak</text>
+
+  <rect x="1135" y="772" width="230" height="64" class="shape"/>
+  <text x="1250" y="794" class="text small">Status Pesanan</text>
+  <text x="1250" y="814" class="text small">Selesai</text>
+
+  <ellipse cx="1250" cy="964" rx="62" ry="30" class="shape"/>
+  <text x="1250" y="964" class="text">Akhir</text>
+
+  <!-- Panah pelanggan -->
+  <line x1="150" y1="122" x2="150" y2="138" class="line" marker-end="url(#arrow)"/>
+  <line x1="212" y1="204" x2="295" y2="204" class="line" marker-end="url(#arrow)"/>
+  <text x="255" y="183" class="label">Tidak</text>
+  <polyline points="365,232 365,332 218,332" class="line" marker-end="url(#arrow)"/>
+  <line x1="150" y1="266" x2="150" y2="299" class="line" marker-end="url(#arrow)"/>
+  <text x="127" y="286" class="label">Ya</text>
+  <line x1="150" y1="360" x2="150" y2="397" class="line" marker-end="url(#arrow)"/>
+  <line x1="162" y1="466" x2="162" y2="499" class="line" marker-end="url(#arrow)"/>
+  <line x1="162" y1="568" x2="162" y2="601" class="line" marker-end="url(#arrow)"/>
+  <line x1="162" y1="670" x2="162" y2="703" class="line" marker-end="url(#arrow)"/>
+  <line x1="162" y1="772" x2="162" y2="805" class="line" marker-end="url(#arrow)"/>
+  <line x1="162" y1="874" x2="162" y2="907" class="line" marker-end="url(#arrow)"/>
+  <polyline points="265,944 285,944 285,958 297,958" class="line" marker-end="url(#arrow)"/>
+  <polyline points="370,1026 370,1082 1060,1082 1060,134 1130,134" class="line" marker-end="url(#arrow)"/>
+  <text x="405" y="1050" class="label">Ya</text>
+  <polyline points="302,958 286,958 286,1030 162,1030 162,981" class="line" marker-end="url(#arrow)"/>
+  <text x="284" y="987" class="label">Tidak</text>
+
+  <!-- Panah kasir -->
+  <line x1="730" y1="166" x2="730" y2="231" class="line" marker-end="url(#arrow)"/>
+  <line x1="730" y1="300" x2="730" y2="365" class="line" marker-end="url(#arrow)"/>
+  <line x1="730" y1="434" x2="730" y2="499" class="line" marker-end="url(#arrow)"/>
+  <line x1="730" y1="568" x2="730" y2="615" class="line" marker-end="url(#arrow)"/>
+  <polyline points="662,688 640,688 640,807" class="line" marker-end="url(#arrow)"/>
+  <text x="627" y="742" class="label">Cash</text>
+  <polyline points="798,688 860,688 860,807" class="line" marker-end="url(#arrow)"/>
+  <text x="850" y="742" class="label">Midtrans</text>
+  <polyline points="640,876 640,912 730,912 730,931" class="line" marker-end="url(#arrow)"/>
+  <polyline points="860,876 860,912 730,912 730,931" class="line" marker-end="url(#arrow)"/>
+  <polyline points="840,968 1060,968 1060,134 1130,134" class="line" marker-end="url(#arrow)"/>
+
+  <!-- Panah operator -->
+  <line x1="1250" y1="166" x2="1250" y2="231" class="line" marker-end="url(#arrow)"/>
+  <line x1="1250" y1="300" x2="1250" y2="365" class="line" marker-end="url(#arrow)"/>
+  <line x1="1250" y1="434" x2="1250" y2="499" class="line" marker-end="url(#arrow)"/>
+  <line x1="1250" y1="568" x2="1250" y2="633" class="line" marker-end="url(#arrow)"/>
+  <line x1="1250" y1="702" x2="1250" y2="767" class="line" marker-end="url(#arrow)"/>
+  <line x1="1250" y1="836" x2="1250" y2="929" class="line" marker-end="url(#arrow)"/>
+
+  <!-- Pesanan selesai masuk riwayat/laporan kasir -->
+  <polyline points="1135,804 1008,804 1008,1062 845,1062" class="line" marker-end="url(#arrow)"/>
+</svg>

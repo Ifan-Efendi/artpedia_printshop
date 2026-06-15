@@ -11,22 +11,23 @@ class LaporanController extends Controller
 {
     private function getDailyReportData(string $date): array
     {
-        $pesanans = Pesanan::whereIn('status', ['dalam_antrian', 'diproses', 'selesai'])
-            ->where(function ($query) use ($date) {
-                $query->whereDate('dikonfirmasi_at', $date)
-                    ->orWhere(function ($fallback) use ($date) {
-                        $fallback->whereNull('dikonfirmasi_at')
-                            ->whereDate('created_at', $date);
-                    });
-            })
-            ->with(['user', 'produk', 'ukuranKertas', 'jenisKertas'])
-            ->orderByRaw('COALESCE(dikonfirmasi_at, created_at) ASC')
+        $pesanans = Pesanan::where('status', 'selesai')
+            ->whereDate('selesai_produksi_at', $date)
+            ->with(['user', 'produk', 'ukuranKertas', 'jenisKertas', 'transaksi'])
+            ->orderBy('selesai_produksi_at')
             ->get();
+
+        $pesananCash = $pesanans->where('metode_pembayaran', 'cash');
+        $pesananCashless = $pesanans->where('metode_pembayaran', 'cashless');
 
         $stats = [
             'total_pesanan' => $pesanans->count(),
             'total_pelanggan' => $pesanans->pluck('user_id')->unique()->count(),
             'total_pendapatan' => $pesanans->sum('total_harga'),
+            'total_pesanan_cash' => $pesananCash->count(),
+            'total_pesanan_cashless' => $pesananCashless->count(),
+            'total_pendapatan_cash' => $pesananCash->sum('total_harga'),
+            'total_pendapatan_cashless' => $pesananCashless->sum('total_harga'),
             'tanggal' => Carbon::parse($date)->format('d F Y'),
         ];
 
