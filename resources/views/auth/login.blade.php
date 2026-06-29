@@ -125,6 +125,12 @@
             <h1 class="auth-title text-center">Login</h1>
             <p class="auth-subtitle text-center">Masuk untuk melanjutkan pemesanan</p>
 
+            @if(session('success'))
+                <div class="alert alert-success" role="alert">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('login') }}">
                 @csrf
 
