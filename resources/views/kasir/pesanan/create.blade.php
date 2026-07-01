@@ -50,6 +50,17 @@
         line-height: 1.5;
     }
 
+    #jumlah {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    #jumlah::-webkit-outer-spin-button,
+    #jumlah::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
     .left-panel .form-label,
     .right-panel .form-label {
         font-weight: 600;
@@ -141,8 +152,8 @@
     }
 
     .option-chip:hover {
-        border-color: #9d005e;
-        background: #fde7f3;
+        border-color: #f1c3dd;
+        background: #fff;
     }
 
     .option-chip-input {
@@ -276,8 +287,11 @@
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label for="jumlah" class="form-label">Jumlah Order</label>
-                                            <input type="number" name="jumlah" id="jumlah" class="form-control" value="1" min="1" required>
+                                            <input type="number" name="jumlah" id="jumlah" class="form-control @error('jumlah') is-invalid @enderror" value="{{ old('jumlah', 1) }}" min="1" step="1" inputmode="numeric" required>
                                             <div class="order-meta text-muted mt-1" id="min-order-text">Min. Order: 1</div>
+                                            @error('jumlah')
+                                                <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
+                                            @enderror
                                         </div>
                                     </div>
 
@@ -289,10 +303,6 @@
                                         <div class="mb-3" id="finishing-group">
                                             <label class="form-label d-block mb-2">Finishing</label>
                                             <div class="option-grid equal-size">
-                                                <label class="position-relative">
-                                                    <input class="option-chip-input finishing-opt" type="radio" name="finishing" value="" checked>
-                                                    <span class="option-chip">Tidak Ada</span>
-                                                </label>
                                                 <label class="position-relative">
                                                     <input class="option-chip-input finishing-opt" type="radio" name="finishing" value="Glossy" data-harga="4000">
                                                     <span class="option-chip">Laminasi Glossy (+Rp 4.000)</span>
@@ -405,6 +415,27 @@
         return hargaSatuan * qty;
     }
 
+    function getMinOrder(produk) {
+        return Math.max(parseInt(produk.min_order || 1, 10), 1);
+    }
+
+    function getJumlahUntukHitung(produk, paksaMinimal = false) {
+        const minOrder = getMinOrder(produk);
+        const nilaiInput = jumlahInput.value.trim();
+        const jumlah = parseInt(nilaiInput, 10);
+
+        if (paksaMinimal && (nilaiInput === '' || Number.isNaN(jumlah) || jumlah < minOrder)) {
+            jumlahInput.value = minOrder;
+            return minOrder;
+        }
+
+        if (nilaiInput === '' || Number.isNaN(jumlah)) {
+            return null;
+        }
+
+        return Math.max(jumlah, minOrder);
+    }
+
     kategoriSelect.addEventListener('change', function() {
         fillProdukByKategori(this.value);
     });
@@ -448,7 +479,7 @@
     }
 
     function updateOptions(produk) {
-        const minOrder = Math.max(parseInt(produk.min_order || 1, 10), 1);
+        const minOrder = getMinOrder(produk);
         const unitLabel = produk.unit_label || 'lembar';
 
         jumlahInput.min = minOrder;
@@ -463,10 +494,7 @@
         if (finishingGroup) {
             finishingGroup.style.display = produk.is_finishing ? 'block' : 'none';
             if (!produk.is_finishing) {
-                const noneOption = document.querySelector('input[name="finishing"][value=""]');
-                if (noneOption) {
-                    noneOption.checked = true;
-                }
+                document.querySelectorAll('.finishing-opt').forEach(el => el.checked = false);
             }
         }
 
@@ -476,19 +504,23 @@
                 document.querySelectorAll('.cutting-opt').forEach(el => el.checked = false);
             }
         }
+
+        syncToggleableOptions('.finishing-opt, .cutting-opt');
     }
 
-    async function calculateTotal() {
+    async function calculateTotal(paksaMinimal = false) {
         const produkId = document.getElementById('produk_id').value;
         if (!produkId) return;
 
         const produk = produkMap[String(produkId)] || null;
         if (!produk) return;
 
-        const qty = Math.max(parseInt(document.getElementById('jumlah').value || 1, 10), parseInt(produk.min_order || 1, 10));
-        if (parseInt(document.getElementById('jumlah').value || 0, 10) !== qty) {
-            document.getElementById('jumlah').value = qty;
+        const qty = getJumlahUntukHitung(produk, paksaMinimal);
+        if (!qty) {
+            document.getElementById('total_price').innerText = formatRupiah(0);
+            return;
         }
+
         const fin = document.querySelector('input[name="finishing"]:checked');
         const cut = document.querySelector('input[name="opsi_potong"]:checked');
         document.getElementById('total_price').innerText = formatRupiah(calculateLocalTotal(produk, qty, fin, cut));
@@ -521,8 +553,41 @@
         }
     }
 
-    document.getElementById('jumlah').addEventListener('input', calculateTotal);
-    document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', calculateTotal));
+    function setupToggleableOptions(selector) {
+        const options = document.querySelectorAll(selector);
+        syncToggleableOptions(selector);
+
+        options.forEach(el => {
+            el.addEventListener('click', function() {
+                if (this.dataset.checked === 'true') {
+                    this.checked = false;
+                    this.dataset.checked = 'false';
+                    calculateTotal();
+                    return;
+                }
+
+                document.querySelectorAll(`input[name="${this.name}"]`).forEach(option => {
+                    option.dataset.checked = 'false';
+                });
+                this.dataset.checked = 'true';
+            });
+
+            el.addEventListener('change', function() {
+                syncToggleableOptions(selector);
+            });
+        });
+    }
+
+    function syncToggleableOptions(selector) {
+        document.querySelectorAll(selector).forEach(el => {
+            el.dataset.checked = el.checked ? 'true' : 'false';
+        });
+    }
+
+    jumlahInput.addEventListener('input', () => calculateTotal());
+    jumlahInput.addEventListener('blur', () => calculateTotal(true));
+    setupToggleableOptions('.finishing-opt, .cutting-opt');
+    document.querySelectorAll('input[type=radio]').forEach(el => el.addEventListener('change', () => calculateTotal()));
 
     fillProdukByKategori(null);
 </script>

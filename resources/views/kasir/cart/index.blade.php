@@ -143,6 +143,12 @@
         </div>
     </div>
 
+    @error('checkout')
+        <div class="alert alert-danger" role="alert">
+            <strong>{{ $message }}</strong>
+        </div>
+    @enderror
+
     @if(count($cart) > 0)
         <div class="row g-4">
             <div class="col-lg-8">

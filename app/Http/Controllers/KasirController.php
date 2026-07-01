@@ -465,6 +465,26 @@ class KasirController extends Controller
     /**
      * Store walk-in order
      */
+    private function getMinOrderCheckoutError(array $cart): ?string
+    {
+        foreach ($cart as $item) {
+            $produk = Produk::find($item['produk_id'] ?? null);
+
+            if (!$produk) {
+                return 'Produk ' . ($item['produk_nama'] ?? 'di keranjang') . ' sudah tidak tersedia. Silakan hapus item tersebut dari keranjang.';
+            }
+
+            $jumlah = (int) ($item['jumlah'] ?? 0);
+            $minOrder = max((int) $produk->min_order, 1);
+
+            if ($jumlah < $minOrder) {
+                return 'Minimal order untuk ' . $produk->nama . ' adalah ' . $minOrder . ' ' . $produk->unit_label . '.';
+            }
+        }
+
+        return null;
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -477,6 +497,12 @@ class KasirController extends Controller
         $walkInCart = session()->get($this->walkInCartKey, []);
         if (empty($walkInCart)) {
             return redirect()->route('kasir.pesanan.create')->with('error', 'Keranjang pesanan langsung masih kosong.');
+        }
+
+        if ($checkoutError = $this->getMinOrderCheckoutError($walkInCart)) {
+            return redirect()->route('kasir.cart.index')
+                ->withErrors(['checkout' => $checkoutError])
+                ->withInput();
         }
 
         foreach ($walkInCart as $item) {

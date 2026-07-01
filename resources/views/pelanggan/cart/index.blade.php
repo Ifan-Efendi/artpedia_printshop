@@ -136,6 +136,12 @@
         </div>
     </div>
 
+    @error('checkout')
+        <div class="alert alert-danger" role="alert">
+            <strong>{{ $message }}</strong>
+        </div>
+    @enderror
+
     <div class="card cart-shell">
         <div class="card-body p-0">
             @if(count($cart) > 0)

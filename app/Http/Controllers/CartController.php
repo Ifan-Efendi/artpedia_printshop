@@ -143,6 +143,26 @@ class CartController extends Controller
         return redirect()->route('pelanggan.cart.index');
     }
 
+    private function getMinOrderCheckoutError(array $cart): ?string
+    {
+        foreach ($cart as $item) {
+            $produk = Produk::find($item['produk_id'] ?? null);
+
+            if (!$produk) {
+                return 'Produk ' . ($item['produk_nama'] ?? 'di keranjang') . ' sudah tidak tersedia. Silakan hapus item tersebut dari keranjang.';
+            }
+
+            $jumlah = (int) ($item['jumlah'] ?? 0);
+            $minOrder = max((int) $produk->min_order, 1);
+
+            if ($jumlah < $minOrder) {
+                return 'Minimal order untuk ' . $produk->nama . ' adalah ' . $minOrder . ' ' . $produk->unit_label . '.';
+            }
+        }
+
+        return null;
+    }
+
     public function processCheckout(Request $request)
     {
         $request->validate([
@@ -152,6 +172,12 @@ class CartController extends Controller
         $cart = session()->get('cart', []);
         if (empty($cart))
             return redirect()->route('katalog')->with('error', 'Keranjang kosong!');
+
+        if ($checkoutError = $this->getMinOrderCheckoutError($cart)) {
+            return redirect()->route('pelanggan.cart.index')
+                ->withErrors(['checkout' => $checkoutError])
+                ->withInput();
+        }
 
         $totalHarga = 0;
         foreach ($cart as $item)
