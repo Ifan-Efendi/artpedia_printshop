@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Notifications\ResetPasswordNotification;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -121,8 +120,4 @@ class User extends Authenticatable
         };
     }
 
-    public function sendPasswordResetNotification($token)
-    {
-        $this->notify(new ResetPasswordNotification($token));
-    }
 }
